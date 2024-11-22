@@ -4,3 +4,7 @@
 .kotlin/metadata/kotlinTransformedMetadataLibraries/
 
 .gradle/
+
+out/
+
+src/main/resources/application-*.properties
