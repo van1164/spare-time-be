@@ -2,13 +2,15 @@ package com.van1164.resttimebe.schedule
 
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.domain.User
+import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
+import java.time.LocalDateTime
 
 class ScheduleService (
-    private val scheduleRepository: ScheduleRepository
+    private val scheduleRepository: ScheduleRepository,
 ) {
-    fun findAll(): List<Schedule> {
-        return scheduleRepository.findAll()
+    fun findSchedules(userId: String, start: LocalDateTime, end: LocalDateTime): List<Schedule> {
+        return scheduleRepository.findSchedules(userId, start, end)
     }
 
     fun getById(scheduleId: String): Schedule {
