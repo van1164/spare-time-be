@@ -20,7 +20,7 @@ class GroupService (
             ?: throw RuntimeException("Group not found")
     }
 
-    fun addGroupToUser(userId: String, groupName: String, memberIdList: List<String>): GroupsUpdateResult{
+    fun addGroupToUser(userId: String, groupName: String, memberIdList: List<String>): Group {
         val user = userReadService.getById(userId)
         val newGroup = Group(groupName = groupName, userIdList = memberIdList)
         if (userRepository.findAllById(memberIdList).size != memberIdList.size) {
@@ -32,12 +32,7 @@ class GroupService (
 
         userRepository.save(updatedUser)
 
-        return GroupsUpdateResult(
-            previousTotalGroups = user.groups.size,
-            previousGroupList = user.groups,
-            currentTotalGroups = updatedGroups.size,
-            currentGroupList = updatedGroups
-        )
+        return newGroup
     }
 
     fun addMembersToGroup(userId: String, groupId: String, memberIdList: List<String>): GroupMemberUpdateResult {
@@ -48,7 +43,6 @@ class GroupService (
         }
 
         val updatedGroup = group.copy(userIdList = group.userIdList + memberIdList)
-        //TODO: 코드 중복 검사 필요
         val updatedGroups = user.groups.map { if (it.groupId == groupId) updatedGroup else it }
         val updatedUser = user.copy(groups = updatedGroups)
 
@@ -71,7 +65,6 @@ class GroupService (
         }
 
         val updatedGroup = group.copy(userIdList = group.userIdList - memberIdList.toSet())
-        //TODO: 코드 중복 검사 필요
         val updatedGroups = user.groups.map { if (it.groupId == groupId) updatedGroup else it }
         val updatedUser = user.copy(groups = updatedGroups)
 
