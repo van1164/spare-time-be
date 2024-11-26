@@ -18,26 +18,28 @@ class FriendService(
             ?: throw RuntimeException("Friend not found")
     }
 
-    //TODO: 코드 중복 점검 필요
     fun addFriend(userId: String, friendId: String, friendName: String?): Friend {
         val user = userReadService.getById(userId)
-        val friend = userReadService.getById(friendId)
+        val friend = userReadService.getById(friendId).let {
+            Friend(it.id, friendName ?: it.name)
+        }
         if (user.friends.any { it.id == friendId }) {
             throw RuntimeException("Already friend")
         }
 
-        val updatedFriends = user.friends + Friend(friend.id, friendName?: friend.name)
+        val updatedFriends = user.friends + friend
         val updatedUser = user.copy(friends = updatedFriends)
         userRepository.save(updatedUser)
 
-        return Friend(friend.id, friendName?: friend.name)
+        return friend
     }
 
-    //TODO: 반환 타입 점검 필요
-    fun removeFriend(userId: String, friendId: String) {
+    fun removeFriend(userId: String, friendId: String): String {
         val user = userReadService.getById(userId)
         val updatedFriends = user.friends.filter { it.id != friendId }
         val updatedUser = user.copy(friends = updatedFriends)
         userRepository.save(updatedUser)
+
+        return friendId
     }
 }
