@@ -1,63 +1,30 @@
 package com.van1164.resttimebe.user
 
-import com.van1164.resttimebe.domain.Friend
-import com.van1164.resttimebe.domain.Group
-import com.van1164.resttimebe.domain.User
-import com.van1164.resttimebe.user.request.CreateGroupRequest
+import com.van1164.resttimebe.user.service.FriendService
+import com.van1164.resttimebe.user.service.GroupService
+import com.van1164.resttimebe.user.service.UserReadService
 import org.springframework.stereotype.Service
 
+//TODO: 사용하는 서비스 객체들의 모든 메서드를 wrapping 해야 할지 점검 필요
 @Service
 class UserService(
-    private val userRepository: UserRepository
+    private val userReadService: UserReadService,
+    private val friendService: FriendService,
+    private val groupService: GroupService
 ) {
-    fun getFriendList(userId: String): List<Friend> {
-        return findById(userId).friends
-    }
+    // userRead
+    fun getById(userId: String) = userReadService.getById(userId)
 
-    fun findById(userId: String): User {
-        return userRepository.findById(userId).orElseThrow {
-            RuntimeException("User not found with id: $userId")
-        }
-    }
+    // friend
+    fun getFriendList(userId: String) = friendService.getFriendList(userId)
+    fun getFriendById(userId: String, friendId: String) = friendService.getFriendById(userId, friendId)
+    fun addFriend(userId: String, friendId: String, friendName: String) = friendService.addFriend(userId, friendId, friendName)
+    fun removeFriend(userId: String, friendId: String) = friendService.removeFriend(userId, friendId)
 
-    fun addGroupToUser(userId: String, request: CreateGroupRequest): User {
-        val user = userRepository.findById(userId).orElseThrow { throw RuntimeException("User not found") }
-        val newGroup = Group(groupName = request.groupName, userIdList = request.userIdList)
-
-        val updatedGroups = user.groups + newGroup
-        val updatedUser = user.copy(groups = updatedGroups)
-
-        return userRepository.save(updatedUser)
-    }
-
-    fun addFriendToGroup(userId: String, groupId: String, friendId: String): User {
-        val user = userRepository.findById(userId).orElseThrow { throw RuntimeException("User not found") }
-        val group = user.groups.find { it.groupId == groupId } ?: throw RuntimeException("Group not found")
-        val friend = user.friends.find { it.id == friendId } ?: throw RuntimeException("Friend not found")
-
-        val updatedGroup = group.copy(userIdList = group.userIdList + friendId)
-        val updatedGroups = user.groups.map { if (it.groupId == groupId) updatedGroup else it }
-        val updatedUser = user.copy(groups = updatedGroups)
-
-        return userRepository.save(updatedUser)
-    }
-
-    fun removeFriendFromGroup(userId: String, groupId: String, friendId: String): User {
-        val user = userRepository.findById(userId).orElseThrow { throw RuntimeException("User not found") }
-        val group = user.groups.find { it.groupId == groupId } ?: throw RuntimeException("Group not found")
-
-        val updatedGroup = group.copy(userIdList = group.userIdList - friendId)
-        val updatedGroups = user.groups.map { if (it.groupId == groupId) updatedGroup else it }
-        val updatedUser = user.copy(groups = updatedGroups)
-
-        return userRepository.save(updatedUser)
-    }
-
-    fun removeGroup(userId: String, groupId: String): User {
-        val user = userRepository.findById(userId).orElseThrow { throw RuntimeException("User not found") }
-        val updatedGroups = user.groups.filter { it.groupId != groupId }
-        val updatedUser = user.copy(groups = updatedGroups)
-
-        return userRepository.save(updatedUser)
-    }
+    // group
+    fun getGroupList(userId: String) = groupService.getGroupList(userId)
+    fun getGroupById(userId: String, groupId: String) = groupService.getGroupById(userId, groupId)
+    fun addGroupToUser(userId: String, groupName: String, memberIdList: List<String>) = groupService.addGroupToUser(userId, groupName, memberIdList)
+    fun addMembersToGroup(userId: String, groupId: String, memberIdList: List<String>) = groupService.addMembersToGroup(userId, groupId, memberIdList)
+    fun removeMembersFromGroup(userId: String, groupId: String, memberIdList: List<String>) = groupService.removeMembersFromGroup(userId, groupId, memberIdList)
 }
