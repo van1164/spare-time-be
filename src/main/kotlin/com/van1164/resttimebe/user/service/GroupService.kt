@@ -1,7 +1,6 @@
 package com.van1164.resttimebe.user.service
 
 import com.van1164.resttimebe.domain.Group
-import com.van1164.resttimebe.domain.User
 import com.van1164.resttimebe.user.UserRepository
 import com.van1164.resttimebe.user.result.GroupMemberUpdateResult
 import com.van1164.resttimebe.user.result.GroupsUpdateResult
