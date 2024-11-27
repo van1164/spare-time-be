@@ -8,8 +8,8 @@ import java.util.*
 data class User(
     @Id val id: String,
     val name : String,
-    val friends: List<Friend>,
-    val groups: List<Group>,
+    val friends: List<Friend> = emptyList(),
+    val groups: List<Group> = emptyList(),
 )
 
 
