@@ -17,7 +17,7 @@ class UserService(
     // friend
     fun getFriendList(userId: String) = friendService.getFriendList(userId)
     fun getFriendById(userId: String, friendId: String) = friendService.getFriendById(userId, friendId)
-    fun addFriend(userId: String, friendId: String, friendName: String) = friendService.addFriend(userId, friendId, friendName)
+    fun addFriend(userId: String, friendId: String, friendName: String?) = friendService.addFriend(userId, friendId, friendName)
     fun removeFriend(userId: String, friendId: String) = friendService.removeFriend(userId, friendId)
 
     // group
