@@ -10,7 +10,7 @@ class UserReadService (
 ) {
     fun getById(userId: String): User {
         return userRepository.findById(userId).orElseThrow {
-            RuntimeException("User not found with id: $userId")
+            RuntimeException("User not found")
         }
     }
 }

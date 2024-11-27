@@ -34,6 +34,7 @@ class FriendService(
         return friend
     }
 
+    //TODO: 잘못된 friendId가 들어올 경우 예외처리하는 것을 검토
     fun removeFriend(userId: String, friendId: String): String {
         val user = userReadService.getById(userId)
         val updatedFriends = user.friends.filter { it.id != friendId }

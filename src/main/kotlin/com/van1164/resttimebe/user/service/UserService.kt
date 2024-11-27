@@ -5,7 +5,6 @@ import com.van1164.resttimebe.user.service.GroupService
 import com.van1164.resttimebe.user.service.UserReadService
 import org.springframework.stereotype.Service
 
-//TODO: 사용하는 서비스 객체들의 모든 메서드를 wrapping 해야 할지 점검 필요
 @Service
 class UserService(
     private val userReadService: UserReadService,
