@@ -1,5 +1,7 @@
 package com.van1164.resttimebe.common
 
+import org.springframework.http.HttpStatus
+
 data class ApiResponse<T> (
   val status: Int = 200,
   val message: String = "",
@@ -7,8 +9,8 @@ data class ApiResponse<T> (
 ) {
 
   companion object {
-    fun <T> with(message: String, data: T?): ApiResponse<T> {
-      return ApiResponse(message = message, data = data)
+    fun <T> with(httpStatus: HttpStatus, message: String, data: T?): ApiResponse<T> {
+      return ApiResponse(status = httpStatus.value(), message = message, data = data)
     }
   }
 }
