@@ -26,6 +26,17 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // ## Spring Security 관련 의존성
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client") // OAuth2 클라이언트 지원
+    implementation("org.springframework.boot:spring-boot-starter-security") // 보안 관련 기능
+    implementation("org.springframework.boot:spring-boot-starter-thymeleaf") // 템플릿 엔진 Thymeleaf
+    implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6") // Thymeleaf와 Spring Security 통합
+    testImplementation("org.springframework.security:spring-security-test") // Spring Security 테스트 지원
+
+    // ## OpenAPI 지원
+    // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0") // OpenAPI UI 지원
 }
 
 kotlin {

@@ -1,6 +1,5 @@
 package com.van1164.resttimebe.schedule
 
-import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
@@ -12,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @SpringBootTest
 class ScheduleServiceTest @Autowired constructor(
@@ -26,7 +26,7 @@ class ScheduleServiceTest @Autowired constructor(
     }
 
     @Test
-    fun `findSchedules should return schedules within date ranges`() {
+    fun `getSchedules should return schedules within date ranges`() {
         val user = userRepository.save(createUser())
         val schedule1 = createSchedule(
             user,
@@ -40,7 +40,7 @@ class ScheduleServiceTest @Autowired constructor(
         )
         scheduleRepository.saveAll(listOf(schedule1, schedule2))
 
-        val schedules = scheduleService.findSchedules(
+        val schedules = scheduleService.getSchedules(
             user.id,
             LocalDate.now().minusDays(2).atStartOfDay(),
             LocalDate.now().plusDays(1).atStartOfDay()
@@ -50,6 +50,29 @@ class ScheduleServiceTest @Autowired constructor(
         assertThat(schedules[0].userId).isEqualTo(schedule2.userId)
         assertThat(schedules[0].startTime).isEqualTo(schedule2.startTime)
         assertThat(schedules[0].endTime).isEqualTo(schedule2.endTime)
+    }
+
+    @Test
+    fun `getById should return schedule successfully`() {
+        val user = userRepository.save(createUser())
+        val schedule = scheduleRepository.save(createSchedule(user))
+
+        val foundSchedule = scheduleService.getById(schedule.id!!)
+
+        assertThat(foundSchedule.id).isEqualTo(schedule.id)
+        assertThat(foundSchedule.userId).isEqualTo(schedule.userId)
+        assertThat(foundSchedule.startTime.truncatedTo(ChronoUnit.SECONDS)).isEqualTo(schedule.startTime.truncatedTo(ChronoUnit.SECONDS))
+        assertThat(foundSchedule.endTime.truncatedTo(ChronoUnit.SECONDS)).isEqualTo(schedule.endTime.truncatedTo(ChronoUnit.SECONDS))
+        assertThat(foundSchedule.repeatType).isEqualTo(schedule.repeatType)
+        assertThat(foundSchedule.participants).isEqualTo(schedule.participants)
+        assertThat(foundSchedule.status).isEqualTo(schedule.status)
+    }
+
+    @Test
+    fun `getById should throw exception when schedule not found`() {
+        assertThatThrownBy { scheduleService.getById("not-found") }
+            .isInstanceOf(RuntimeException::class.java)
+            .hasMessage("Schedule not found with id: not-found")
     }
 
     @Test

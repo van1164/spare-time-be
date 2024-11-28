@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 class ScheduleService (
     private val scheduleRepository: ScheduleRepository,
 ) {
-    fun findSchedules(userId: String, rangeStart: LocalDateTime, rangeEnd: LocalDateTime): List<Schedule> {
+    fun getSchedules(userId: String, rangeStart: LocalDateTime, rangeEnd: LocalDateTime): List<Schedule> {
         return scheduleRepository.findSchedules(userId, rangeStart, rangeEnd)
     }
 
@@ -21,9 +21,9 @@ class ScheduleService (
         }
     }
 
-    fun create(user: User, request: CreateScheduleRequest): Schedule {
+    fun create(userId: String, request: CreateScheduleRequest): Schedule {
         return scheduleRepository.save(
-            request.toDomain(user.id)
+            request.toDomain(userId)
         )
     }
 
