@@ -1,4 +1,4 @@
-package com.van1164.resttimebe.common
+package com.van1164.resttimebe.common.response
 
 import org.springframework.http.HttpStatus
 
