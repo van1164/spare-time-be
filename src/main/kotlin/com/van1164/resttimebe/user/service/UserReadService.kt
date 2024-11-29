@@ -1,6 +1,7 @@
 package com.van1164.resttimebe.user.service
 
 import com.van1164.resttimebe.common.exception.ErrorCode
+import com.van1164.resttimebe.common.exception.ErrorCode.*
 import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.domain.User
 import com.van1164.resttimebe.user.UserRepository
@@ -12,7 +13,7 @@ class UserReadService (
 ) {
     fun getById(userId: String): User {
         return userRepository.findById(userId).orElseThrow {
-            GlobalExceptions.NotFoundException(ErrorCode.NOT_FOUND)
+            GlobalExceptions.NotFoundException(USER_NOT_FOUND)
         }
     }
 }
