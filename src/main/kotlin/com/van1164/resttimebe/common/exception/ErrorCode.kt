@@ -14,6 +14,10 @@ enum class ErrorCode (val status:Int, val code:String, val message:String) {
     USER_NOT_FOUND(404, "U001", "사용자를 찾을 수 없습니다."),
     SOME_USERS_NOT_FOUND(404, "U002", "일부 사용자를 찾을 수 없습니다."),
 
+    // Friend
+    FRIEND_NOT_FOUND(404, "F001", "친구를 찾을 수 없습니다."),
+    FRIEND_ALREADY_EXIST(409, "F002", "이미 친구입니다."),
+
     // Group
     GROUP_NOT_FOUND(404, "G001", "그룹을 찾을 수 없습니다."),
 

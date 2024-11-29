@@ -14,13 +14,17 @@ class GlobalExceptionHandler {
     fun handleNotfoundException(
         e: GlobalExceptions.NotFoundException
     ): ResponseEntity<ErrorResponse> {
-
         return ResponseEntity.status(HttpStatus.valueOf(e.errorCode.status)).body(
-            ErrorResponse(
-                status = e.errorCode.status,
-                message = e.errorCode.message,
-                code = e.errorCode.code
-            )
+            ErrorResponse.of(e.errorCode)
+        )
+    }
+
+    @ExceptionHandler(GlobalExceptions.InternalErrorException::class)
+    fun handleInternalErrorException(
+        e: GlobalExceptions.InternalErrorException
+    ): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.valueOf(e.errorCode.status)).body(
+            ErrorResponse.of(e.errorCode)
         )
     }
 }

@@ -27,7 +27,7 @@ class FriendService(
             Friend(it.id, friendName ?: it.name)
         }
         if (user.friends.any { it.id == friendId }) {
-            throw RuntimeException("Already friend")
+            throw GlobalExceptions.InternalErrorException(FRIEND_ALREADY_EXIST)
         }
 
         val updatedFriends = user.friends + friend

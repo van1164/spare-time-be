@@ -1,5 +1,8 @@
 package com.van1164.resttimebe.user
 
+import com.van1164.resttimebe.common.exception.ErrorCode
+import com.van1164.resttimebe.common.exception.ErrorCode.*
+import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.user.service.GroupService
 import org.assertj.core.api.Assertions
@@ -13,7 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class GroupServiceTest @Autowired constructor(
     private val userRepository: UserRepository,
     private val groupService: GroupService
-){
+) {
     @BeforeEach
     fun setUp() {
         userRepository.deleteAll()
@@ -49,7 +52,8 @@ class GroupServiceTest @Autowired constructor(
 
         Assertions.assertThatThrownBy {
             groupService.getGroupById(user.id, "notFoundGroupId")
-        }.isInstanceOf(RuntimeException::class.java)
+        }.isInstanceOf(GlobalExceptions.NotFoundException::class.java)
+            .hasMessage(GROUP_NOT_FOUND.message)
     }
 
     @Test
@@ -66,9 +70,10 @@ class GroupServiceTest @Autowired constructor(
     fun `addMembersToGroup should add members to group successfully`() {
         val user = userRepository.save(createUser())
         val group = groupService.addGroupToUser(user.id, "group1", emptyList())
-        val (member1 ,member2) = userRepository.saveAll(listOf(createUser(), createUser()))
+        val (member1, member2) = userRepository.saveAll(listOf(createUser(), createUser()))
 
-        val result = groupService.addMembersToGroup(user.id, group.groupId, listOf(member1.id, member2.id))
+        val result =
+            groupService.addMembersToGroup(user.id, group.groupId, listOf(member1.id, member2.id))
 
         assertThat(result.groupId).isEqualTo(group.groupId)
         assertThat(result.previousTotalMembers).isEqualTo(0)
@@ -84,8 +89,13 @@ class GroupServiceTest @Autowired constructor(
         val member = userRepository.save(createUser())
 
         assertThatThrownBy {
-            groupService.addMembersToGroup(user.id, group.groupId, listOf(member.id, "notFoundMemberId"))
-        }.isInstanceOf(RuntimeException::class.java)
+            groupService.addMembersToGroup(
+                user.id,
+                group.groupId,
+                listOf(member.id, "notFoundMemberId")
+            )
+        }.isInstanceOf(GlobalExceptions.NotFoundException::class.java)
+            .hasMessage(SOME_USERS_NOT_FOUND.message)
     }
 
     @Test
@@ -110,8 +120,13 @@ class GroupServiceTest @Autowired constructor(
         val group = groupService.addGroupToUser(user.id, "group1", listOf(member1.id, member2.id))
 
         assertThatThrownBy {
-            groupService.removeMembersFromGroup(user.id, group.groupId, listOf(member1.id, "notFoundMemberId"))
-        }.isInstanceOf(RuntimeException::class.java)
+            groupService.removeMembersFromGroup(
+                user.id,
+                group.groupId,
+                listOf(member1.id, "notFoundMemberId")
+            )
+        }.isInstanceOf(GlobalExceptions.NotFoundException::class.java)
+            .hasMessage(SOME_USERS_NOT_FOUND.message)
     }
 
     @Test

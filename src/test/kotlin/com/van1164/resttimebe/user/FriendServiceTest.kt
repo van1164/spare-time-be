@@ -1,5 +1,8 @@
 package com.van1164.resttimebe.user
 
+import com.van1164.resttimebe.common.exception.ErrorCode
+import com.van1164.resttimebe.common.exception.ErrorCode.*
+import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.user.service.FriendService
 import org.assertj.core.api.Assertions.assertThat
@@ -50,8 +53,8 @@ class FriendServiceTest @Autowired constructor(
         friendService.addFriend(user.id, another.id, null)
 
         assertThatThrownBy { friendService.getFriendById(user.id, "notFound") }
-            .isInstanceOf(RuntimeException::class.java)
-            .hasMessage("Friend not found")
+            .isInstanceOf(GlobalExceptions.NotFoundException::class.java)
+            .hasMessage(SOME_USERS_NOT_FOUND.message)
     }
 
     @Test
@@ -69,8 +72,8 @@ class FriendServiceTest @Autowired constructor(
         val user = userRepository.save(createUser())
 
         assertThatThrownBy { friendService.addFriend(user.id, "notFound", null) }
-            .isInstanceOf(RuntimeException::class.java)
-            .hasMessage("User not found")
+            .isInstanceOf(GlobalExceptions.NotFoundException::class.java)
+            .hasMessage(USER_NOT_FOUND.message)
     }
 
     @Test
@@ -80,8 +83,8 @@ class FriendServiceTest @Autowired constructor(
         friendService.addFriend(user.id, another.id, null)
 
         assertThatThrownBy { friendService.addFriend(user.id, another.id, null) }
-            .isInstanceOf(RuntimeException::class.java)
-            .hasMessage("Already friend")
+            .isInstanceOf(GlobalExceptions.InternalErrorException::class.java)
+            .hasMessage(FRIEND_ALREADY_EXIST.message)
     }
 
     @Test

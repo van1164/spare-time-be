@@ -1,5 +1,8 @@
 package com.van1164.resttimebe.user
 
+import com.van1164.resttimebe.common.exception.ErrorCode
+import com.van1164.resttimebe.common.exception.ErrorCode.*
+import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.user.service.UserReadService
 import org.assertj.core.api.Assertions.assertThat
@@ -33,7 +36,7 @@ class UserReadServiceTest @Autowired constructor(
         userRepository.save(createUser())
 
         assertThatThrownBy { userReadService.getById("notFound") }
-            .isInstanceOf(RuntimeException::class.java)
-            .hasMessage("User not found")
+            .isInstanceOf(GlobalExceptions.NotFoundException::class.java)
+            .hasMessage(USER_NOT_FOUND.message)
     }
 }
