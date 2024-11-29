@@ -17,6 +17,9 @@ enum class ErrorCode (val status:Int, val code:String, val message:String) {
     // Group
     GROUP_NOT_FOUND(404, "G001", "그룹을 찾을 수 없습니다."),
 
+    // Schedule
+    SCHEDULE_NOT_FOUND(404, "S001", "일정을 찾을 수 없습니다."),
+
     // Auth
     DUPLICATED_PHONE_NUMBER(409, "A001", "이미 등록된 전화번호입니다."),
 

@@ -19,7 +19,7 @@ class ScheduleService (
 
     fun getById(scheduleId: String): Schedule {
         return scheduleRepository.findById(scheduleId).orElseThrow {
-            throw GlobalExceptions.NotFoundException(ErrorCode.NOT_FOUND)
+            throw GlobalExceptions.NotFoundException(ErrorCode.SCHEDULE_NOT_FOUND)
         }
     }
 
