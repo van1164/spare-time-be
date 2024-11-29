@@ -1,5 +1,7 @@
 package com.van1164.resttimebe.user.service
 
+import com.van1164.resttimebe.common.exception.ErrorCode
+import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.domain.Friend
 import com.van1164.resttimebe.user.UserRepository
 import org.springframework.stereotype.Service
@@ -15,7 +17,7 @@ class FriendService(
 
     fun getFriendById(userId: String, friendId: String): Friend {
         return userReadService.getById(userId).friends.find { it.id == friendId }
-            ?: throw RuntimeException("Friend not found")
+            ?: throw GlobalExceptions.NotFoundException(ErrorCode.NOT_FOUND)
     }
 
     fun addFriend(userId: String, friendId: String, friendName: String?): Friend {

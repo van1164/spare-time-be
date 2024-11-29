@@ -1,6 +1,6 @@
 package com.van1164.resttimebe.schedule.controller
 
-import com.van1164.resttimebe.common.ApiResponse
+import com.van1164.resttimebe.common.response.ApiResponse
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.domain.User
 import com.van1164.resttimebe.schedule.ScheduleService

@@ -1,6 +1,7 @@
 package com.van1164.resttimebe.common.exception
 
-import com.van1164.resttimebe.common.ApiResponse
+import com.van1164.resttimebe.common.response.ApiResponse
+import com.van1164.resttimebe.common.response.ErrorResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
@@ -10,16 +11,15 @@ import org.springframework.web.bind.annotation.ResponseStatus
 @ControllerAdvice
 class GlobalExceptionHandler {
     @ExceptionHandler(GlobalExceptions.NotFoundException::class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
     fun handleNotfoundException(
         e: GlobalExceptions.NotFoundException
-    ) : ResponseEntity<ApiResponse<Nothing>> {
+    ): ResponseEntity<ErrorResponse> {
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-            ApiResponse.with(
-                HttpStatus.NOT_FOUND,
-                e.message ?: "",
-                null
+        return ResponseEntity.status(HttpStatus.valueOf(e.errorCode.status)).body(
+            ErrorResponse(
+                status = e.errorCode.status,
+                message = e.errorCode.message,
+                code = e.errorCode.code
             )
         )
     }

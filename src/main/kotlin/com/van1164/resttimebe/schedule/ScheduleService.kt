@@ -1,5 +1,7 @@
 package com.van1164.resttimebe.schedule
 
+import com.van1164.resttimebe.common.exception.ErrorCode
+import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.domain.User
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
@@ -17,7 +19,7 @@ class ScheduleService (
 
     fun getById(scheduleId: String): Schedule {
         return scheduleRepository.findById(scheduleId).orElseThrow {
-            RuntimeException("Schedule not found with id: $scheduleId")
+            throw GlobalExceptions.NotFoundException(ErrorCode.NOT_FOUND)
         }
     }
 
