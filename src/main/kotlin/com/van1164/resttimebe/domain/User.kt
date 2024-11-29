@@ -10,8 +10,8 @@ data class User(
     val name : String,
     val friends: List<Friend> = emptyList(),
     val groups: List<Group> = emptyList(),
+    val categories: List<Category> = emptyList(),
 )
-
 
 data class Friend(
     val id : String,
@@ -22,4 +22,11 @@ data class Group(
     val groupId : String = UUID.randomUUID().toString(),
     val groupName : String,
     val userIdList : List<String>,
+)
+
+data class Category(
+    val categoryId : String = UUID.randomUUID().toString(),
+    val categoryName : String,
+    val userId : String,
+    val color : String,
 )
