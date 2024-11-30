@@ -1,5 +1,8 @@
 package com.van1164.resttimebe.schedule
 
+import com.van1164.resttimebe.common.exception.ErrorCode
+import com.van1164.resttimebe.common.exception.ErrorCode.*
+import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
@@ -71,8 +74,8 @@ class ScheduleServiceTest @Autowired constructor(
     @Test
     fun `getById should throw exception when schedule not found`() {
         assertThatThrownBy { scheduleService.getById("not-found") }
-            .isInstanceOf(RuntimeException::class.java)
-            .hasMessage("Schedule not found with id: not-found")
+            .isInstanceOf(GlobalExceptions.NotFoundException::class.java)
+            .hasMessage(SCHEDULE_NOT_FOUND.message)
     }
 
     @Test
