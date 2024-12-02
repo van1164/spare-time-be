@@ -4,7 +4,7 @@ import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
-import com.van1164.resttimebe.user.UserRepository
+import com.van1164.resttimebe.user.repository.UserRepository
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

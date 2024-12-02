@@ -4,7 +4,7 @@ import com.van1164.resttimebe.common.exception.ErrorCode.*
 import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.domain.Group
 import com.van1164.resttimebe.domain.User
-import com.van1164.resttimebe.user.UserRepository
+import com.van1164.resttimebe.user.repository.UserRepository
 import com.van1164.resttimebe.user.result.GroupMemberUpdateResult
 import com.van1164.resttimebe.user.result.GroupsUpdateResult
 import org.springframework.stereotype.Service

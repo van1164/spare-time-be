@@ -1,4 +1,4 @@
-package com.van1164.resttimebe.user
+package com.van1164.resttimebe.user.service
 
 import com.van1164.resttimebe.user.service.FriendService
 import com.van1164.resttimebe.user.service.GroupService

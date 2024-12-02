@@ -34,6 +34,12 @@ dependencies {
     implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6") // Thymeleaf와 Spring Security 통합
     testImplementation("org.springframework.security:spring-security-test") // Spring Security 테스트 지원
 
+    //JWT
+    implementation("io.jsonwebtoken:jjwt:0.9.1")
+    implementation("com.sun.xml.bind:jaxb-impl:4.0.1")
+    implementation("com.sun.xml.bind:jaxb-core:4.0.1")
+    implementation("javax.xml.bind:jaxb-api:2.4.0-b180830.0359")
+
     // ## OpenAPI 지원
     // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0") // OpenAPI UI 지원

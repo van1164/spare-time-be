@@ -1,9 +1,9 @@
 package com.van1164.resttimebe.user
 
-import com.van1164.resttimebe.common.exception.ErrorCode
 import com.van1164.resttimebe.common.exception.ErrorCode.*
 import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
+import com.van1164.resttimebe.user.repository.UserRepository
 import com.van1164.resttimebe.user.service.UserReadService
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy

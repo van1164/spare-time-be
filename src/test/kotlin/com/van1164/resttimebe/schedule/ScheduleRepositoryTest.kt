@@ -1,7 +1,7 @@
 package com.van1164.resttimebe.schedule
 
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
-import com.van1164.resttimebe.user.UserRepository
+import com.van1164.resttimebe.user.repository.UserRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
