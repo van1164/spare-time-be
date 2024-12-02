@@ -35,6 +35,7 @@ class ScheduleService (
             Schedule(
                 id = schedule.id,
                 userId = schedule.userId,
+                category = request.category,
                 startTime = request.startTime,
                 endTime = request.endTime,
                 repeatType = request.repeatType,

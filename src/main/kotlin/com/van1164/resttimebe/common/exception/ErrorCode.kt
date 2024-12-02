@@ -21,6 +21,9 @@ enum class ErrorCode (val status:Int, val code:String, val message:String) {
     // Group
     GROUP_NOT_FOUND(404, "G001", "그룹을 찾을 수 없습니다."),
 
+    // Category
+    CATEGORY_NOT_FOUND(404, "C001", "카테고리를 찾을 수 없습니다."),
+
     // Schedule
     SCHEDULE_NOT_FOUND(404, "S001", "일정을 찾을 수 없습니다."),
 
