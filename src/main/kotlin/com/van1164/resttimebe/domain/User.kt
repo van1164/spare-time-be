@@ -1,6 +1,7 @@
 package com.van1164.resttimebe.domain
 
 import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
 import java.util.*
 
@@ -8,7 +9,7 @@ import java.util.*
 data class User(
     @Id val id: String? = null,
     val name : String,
-    val userId: String,
+    @Indexed(unique = true) val userId: String,
     val displayName: String,
     val email : String,
     val friends: List<Friend> = emptyList(),
