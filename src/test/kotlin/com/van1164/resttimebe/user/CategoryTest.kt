@@ -1,12 +1,11 @@
 package com.van1164.resttimebe.user
 
 import com.van1164.resttimebe.common.exception.ErrorCode.CATEGORY_NOT_FOUND
-import com.van1164.resttimebe.common.exception.ErrorCode.USER_ID_NOT_INITIALIZED
-import com.van1164.resttimebe.common.exception.GlobalExceptions
-import com.van1164.resttimebe.common.exception.GlobalExceptions.*
+import com.van1164.resttimebe.common.exception.GlobalExceptions.NotFoundException
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.user.repository.UserRepository
 import com.van1164.resttimebe.user.service.CategoryService
+import com.van1164.resttimebe.util.UserIdHelper.Companion.validateAndGetId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -26,7 +25,7 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `getCategoryList should return all categories successfully`() {
-        val userId = userRepository.save(createUser()).id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
+        val userId = userRepository.save(createUser()).validateAndGetId()
         val category1 = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
         val category2 = categoryService.addCategoryToUser(userId, "category2", "#000000")
 
@@ -39,7 +38,7 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `getCategoryById should return category successfully`() {
-        val userId = userRepository.save(createUser()).id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
+        val userId = userRepository.save(createUser()).validateAndGetId()
         val category = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
 
         val foundCategory = categoryService.getCategoryById(userId, category.categoryId)
@@ -49,7 +48,7 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `getCategoryById should throw exception when category not found`() {
-        val userId = userRepository.save(createUser()).id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
+        val userId = userRepository.save(createUser()).validateAndGetId()
         categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
 
         assertThatThrownBy {
@@ -60,7 +59,7 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `addCategoryToUser should add category successfully`() {
-        val userId = userRepository.save(createUser()).id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
+        val userId = userRepository.save(createUser()).validateAndGetId()
         val category = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
 
         assertThat(category.categoryName).isEqualTo("category1")
@@ -69,7 +68,7 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `updateCategory should update category successfully`() {
-        val userId = userRepository.save(createUser()).id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
+        val userId = userRepository.save(createUser()).validateAndGetId()
         val category = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
 
         val updatedCategory = categoryService.updateCategory(userId, category.categoryId, "category2", "#000000")
@@ -80,7 +79,7 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `removeCategoryFromUser should remove category successfully`() {
-        val userId = userRepository.save(createUser()).id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
+        val userId = userRepository.save(createUser()).validateAndGetId()
         val category = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
 
         val removedCategory = categoryService.removeCategoryFromUser(userId, category.categoryId)
