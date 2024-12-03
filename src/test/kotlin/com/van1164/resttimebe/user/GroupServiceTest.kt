@@ -5,7 +5,7 @@ import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.user.repository.UserRepository
 import com.van1164.resttimebe.user.service.GroupService
-import com.van1164.resttimebe.util.UserIdHelper.Companion.validateAndGetId
+import com.van1164.resttimebe.util.DatabaseIdHelper.Companion.validateAndGetId
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach

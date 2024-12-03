@@ -3,7 +3,7 @@ package com.van1164.resttimebe.user
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.user.repository.UserRepository
 import com.van1164.resttimebe.user.service.UserService
-import com.van1164.resttimebe.util.UserIdHelper.Companion.validateAndGetId
+import com.van1164.resttimebe.util.DatabaseIdHelper.Companion.validateAndGetId
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
