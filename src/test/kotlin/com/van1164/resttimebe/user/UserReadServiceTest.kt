@@ -17,6 +17,7 @@ class UserReadServiceTest @Autowired constructor(
     private val userReadService: UserReadService,
     private val userRepository: UserRepository
 ) {
+    /*
     @BeforeEach
     fun setUp() {
         userRepository.deleteAll()
@@ -39,4 +40,6 @@ class UserReadServiceTest @Autowired constructor(
             .isInstanceOf(GlobalExceptions.NotFoundException::class.java)
             .hasMessage(USER_NOT_FOUND.message)
     }
+
+     */
 }

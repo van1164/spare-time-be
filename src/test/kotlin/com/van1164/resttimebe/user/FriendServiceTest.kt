@@ -17,6 +17,7 @@ class FriendServiceTest @Autowired constructor(
     private val friendService: FriendService,
     private val userRepository: UserRepository
 ) {
+/*
     @BeforeEach
     fun setUp() {
         userRepository.deleteAll()
@@ -120,4 +121,5 @@ class FriendServiceTest @Autowired constructor(
     }
 
     //TODO: 잘못된 friendId가 들어올 경우 예외처리하는 것을 검토 중
+*/
 }

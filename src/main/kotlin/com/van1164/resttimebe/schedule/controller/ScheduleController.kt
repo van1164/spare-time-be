@@ -1,5 +1,7 @@
 package com.van1164.resttimebe.schedule.controller
 
+import com.van1164.resttimebe.common.exception.ErrorCode.*
+import com.van1164.resttimebe.common.exception.GlobalExceptions.*
 import com.van1164.resttimebe.common.response.ApiResponse
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.domain.User
@@ -23,6 +25,7 @@ class ScheduleController(
         @RequestParam rangeStart: LocalDateTime,
         @RequestParam rangeEnd: LocalDateTime
     ): ResponseEntity<ApiResponse<List<Schedule>>> {
+        user.id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
         return ResponseEntity.ok()
             .body(
                 ApiResponse.with(
@@ -54,6 +57,7 @@ class ScheduleController(
         @AuthenticationPrincipal user: User,
         @RequestBody request: CreateScheduleRequest
     ): ResponseEntity<ApiResponse<Schedule>> {
+        user.id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
         return ResponseEntity.ok()
             .body(
                 ApiResponse.with(

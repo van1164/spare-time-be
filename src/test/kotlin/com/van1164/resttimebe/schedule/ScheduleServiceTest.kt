@@ -44,7 +44,7 @@ class ScheduleServiceTest @Autowired constructor(
         scheduleRepository.saveAll(listOf(schedule1, schedule2))
 
         val schedules = scheduleService.getSchedules(
-            user.id,
+            user.id!!,
             LocalDate.now().minusDays(2).atStartOfDay(),
             LocalDate.now().plusDays(1).atStartOfDay()
         )
