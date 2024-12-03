@@ -5,6 +5,7 @@ import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.user.repository.UserRepository
 import com.van1164.resttimebe.user.service.UserReadService
+import com.van1164.resttimebe.util.DatabaseIdHelper.Companion.validateAndGetId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -24,11 +25,11 @@ class UserReadServiceTest @Autowired constructor(
 
     @Test
     fun `getById should return correct user successfully`() {
-        val user = userRepository.save(createUser())
+        val userId = userRepository.save(createUser()).validateAndGetId()
 
-        val foundUser = userReadService.getById(user.id)
+        val foundUser = userReadService.getById(userId)
 
-        assertThat(foundUser.id).isEqualTo(user.id)
+        assertThat(foundUser.id).isEqualTo(userId)
     }
 
     @Test
@@ -39,4 +40,5 @@ class UserReadServiceTest @Autowired constructor(
             .isInstanceOf(GlobalExceptions.NotFoundException::class.java)
             .hasMessage(USER_NOT_FOUND.message)
     }
+
 }

@@ -13,6 +13,7 @@ enum class ErrorCode (val status:Int, val code:String, val message:String) {
     // User
     USER_NOT_FOUND(404, "U001", "사용자를 찾을 수 없습니다."),
     SOME_USERS_NOT_FOUND(404, "U002", "일부 사용자를 찾을 수 없습니다."),
+    USER_ID_NOT_INITIALIZED(400, "U003", "사용자 ID가 초기화되지 않았습니다."),
 
     // Friend
     FRIEND_NOT_FOUND(404, "F001", "친구를 찾을 수 없습니다."),
@@ -26,6 +27,7 @@ enum class ErrorCode (val status:Int, val code:String, val message:String) {
 
     // Schedule
     SCHEDULE_NOT_FOUND(404, "S001", "일정을 찾을 수 없습니다."),
+    SCHEDULE_ID_NOT_INITIALIZED(400, "S002", "일정 ID가 초기화되지 않았습니다."),
 
     // Auth
     DUPLICATED_PHONE_NUMBER(409, "A001", "이미 등록된 전화번호입니다."),

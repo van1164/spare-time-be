@@ -27,4 +27,13 @@ class GlobalExceptionHandler {
             ErrorResponse.of(e.errorCode)
         )
     }
+
+    @ExceptionHandler(GlobalExceptions.IllegalStateException::class)
+    fun handleIllegalStateException(
+        e: GlobalExceptions.IllegalStateException
+    ): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.valueOf(e.errorCode.status)).body(
+            ErrorResponse.of(e.errorCode)
+        )
+    }
 }

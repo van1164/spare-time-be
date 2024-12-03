@@ -8,6 +8,7 @@ import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
 import com.van1164.resttimebe.user.repository.UserRepository
+import com.van1164.resttimebe.util.DatabaseIdHelper.Companion.validateAndGetId
 import org.assertj.core.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -31,6 +32,7 @@ class ScheduleServiceTest @Autowired constructor(
     @Test
     fun `getSchedules should return schedules within date ranges`() {
         val user = userRepository.save(createUser())
+        val userId = user.validateAndGetId()
         val schedule1 = createSchedule(
             user,
             LocalDate.now().minusDays(5).atStartOfDay(),
@@ -44,7 +46,7 @@ class ScheduleServiceTest @Autowired constructor(
         scheduleRepository.saveAll(listOf(schedule1, schedule2))
 
         val schedules = scheduleService.getSchedules(
-            user.id,
+            userId,
             LocalDate.now().minusDays(2).atStartOfDay(),
             LocalDate.now().plusDays(1).atStartOfDay()
         )
@@ -59,8 +61,9 @@ class ScheduleServiceTest @Autowired constructor(
     fun `getById should return schedule successfully`() {
         val user = userRepository.save(createUser())
         val schedule = scheduleRepository.save(createSchedule(user))
+        val scheduleId = schedule.validateAndGetId()
 
-        val foundSchedule = scheduleService.getById(schedule.id!!)
+        val foundSchedule = scheduleService.getById(scheduleId)
 
         assertThat(foundSchedule.id).isEqualTo(schedule.id)
         assertThat(foundSchedule.userId).isEqualTo(schedule.userId)
@@ -82,9 +85,10 @@ class ScheduleServiceTest @Autowired constructor(
     fun `update should update schedule successfully`() {
         val user = userRepository.save(createUser())
         val schedule = scheduleRepository.save(createSchedule(user))
+        val scheduleId = schedule.validateAndGetId()
 
         val updatedSchedule = scheduleService.update(
-            schedule.id!!, CreateScheduleRequest(
+            scheduleId, CreateScheduleRequest(
                 startTime = schedule.startTime.plusDays(1),
                 endTime = schedule.endTime.plusDays(1),
                 repeatType = schedule.repeatType,
@@ -105,10 +109,10 @@ class ScheduleServiceTest @Autowired constructor(
     @Test
     fun `delete should delete schedule successfully`() {
         val user = userRepository.save(createUser())
-        val schedule = scheduleRepository.save(createSchedule(user))
+        val scheduleId = scheduleRepository.save(createSchedule(user)).validateAndGetId()
 
-        scheduleService.delete(schedule.id!!)
+        scheduleService.delete(scheduleId)
 
-        assertThat(scheduleRepository.findById(schedule.id!!)).isEmpty
+        assertThat(scheduleRepository.findById(scheduleId)).isEmpty
     }
 }

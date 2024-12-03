@@ -3,7 +3,7 @@ package com.van1164.resttimebe.user.service
 import com.van1164.resttimebe.common.exception.ErrorCode.CATEGORY_NOT_FOUND
 import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.domain.Category
-import com.van1164.resttimebe.user.UserRepository
+import com.van1164.resttimebe.user.repository.UserRepository
 import org.springframework.stereotype.Service
 
 @Service
@@ -23,7 +23,7 @@ class CategoryService (
     fun addCategoryToUser(userId: String, categoryName: String, color: String): Category {
         val user = userReadService.getById(userId)
         val newCategory = Category(
-            userId = user.id,
+            userId = userId,
             categoryName = categoryName,
             color = color
         )
