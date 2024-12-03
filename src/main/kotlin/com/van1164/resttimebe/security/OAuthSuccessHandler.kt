@@ -12,11 +12,6 @@ import java.io.IOException
 
 @Component
 class OAuthSuccessHandler(
-    @Value("\${secretKey}")
-    private val jwtSecret: String,
-    @Value("\${cors.frontend}")
-    private val corsFrontend : String,
-
     private val jwtUtil: JwtUtil
 ) : SimpleUrlAuthenticationSuccessHandler() {
 
@@ -37,8 +32,7 @@ class OAuthSuccessHandler(
         val refreshToken :String = jwtUtil.generateRefreshToken(username = userId)
 
         response.sendRedirect(
-            corsFrontend +
-                    "?access_token=" + accessToken +"&refresh_token="+refreshToken
+            "?access_token=$accessToken&refresh_token=$refreshToken"
         )
     }
 
