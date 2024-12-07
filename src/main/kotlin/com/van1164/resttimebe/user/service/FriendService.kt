@@ -23,7 +23,7 @@ class FriendService(
     fun addFriend(userId: String, friendId: String, friendName: String?): Friend {
         val user = userReadService.getById(userId)
         val friend = userReadService.getById(friendId).let {
-            Friend(it.id, friendName ?: it.name)
+            Friend(it.id!!, friendName ?: it.name)
         }
         if (user.friends.any { it.id == friendId }) {
             throw GlobalExceptions.InternalErrorException(FRIEND_ALREADY_EXIST)

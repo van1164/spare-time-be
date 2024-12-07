@@ -5,6 +5,7 @@ import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.domain.User
 import com.van1164.resttimebe.schedule.ScheduleService
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
+import com.van1164.resttimebe.security.CustomUserDetails
 import io.swagger.v3.oas.annotations.Parameter
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -19,7 +20,7 @@ class ScheduleController(
 ) {
     @GetMapping
     fun getSchedules(
-        @AuthenticationPrincipal user: User,
+        @AuthenticationPrincipal user: CustomUserDetails,
         @RequestParam rangeStart: LocalDateTime,
         @RequestParam rangeEnd: LocalDateTime
     ): ResponseEntity<ApiResponse<List<Schedule>>> {
@@ -28,14 +29,14 @@ class ScheduleController(
                 ApiResponse.with(
                     HttpStatus.OK,
                     "",
-                    scheduleService.getSchedules(user.id, rangeStart, rangeEnd)
+                    scheduleService.getSchedules(user.loginId, rangeStart, rangeEnd)
                 )
             )
     }
 
     @GetMapping("/{schedule_id}")
     fun getScheduleDetails(
-        @AuthenticationPrincipal user: User,
+        @AuthenticationPrincipal user: CustomUserDetails,
         @Parameter(hidden = true)
         @PathVariable(name = "schedule_id") scheduleId: String
     ): ResponseEntity<ApiResponse<Schedule>> {
@@ -51,7 +52,7 @@ class ScheduleController(
 
     @PostMapping
     fun createSchedule(
-        @AuthenticationPrincipal user: User,
+        @AuthenticationPrincipal user: CustomUserDetails,
         @RequestBody request: CreateScheduleRequest
     ): ResponseEntity<ApiResponse<Schedule>> {
         return ResponseEntity.ok()
@@ -59,14 +60,14 @@ class ScheduleController(
                 ApiResponse.with(
                     HttpStatus.OK,
                     "",
-                    scheduleService.create(user.id, request)
+                    scheduleService.create(user.loginId, request)
                 )
             )
     }
 
     @PutMapping("/{schedule_id}")
     fun updateSchedule(
-        @AuthenticationPrincipal user: User,
+        @AuthenticationPrincipal user: CustomUserDetails,
         @PathVariable(name = "schedule_id") scheduleId: String,
         @RequestBody request: CreateScheduleRequest
     ): ResponseEntity<ApiResponse<Schedule>> {
@@ -82,7 +83,7 @@ class ScheduleController(
 
     @DeleteMapping("/{schedule_id}")
     fun deleteSchedule(
-        @AuthenticationPrincipal user: User,
+        @AuthenticationPrincipal user: CustomUserDetails,
         @PathVariable(name = "schedule_id") scheduleId: String
     ): ResponseEntity<ApiResponse<String>> {
         scheduleService.delete(scheduleId)

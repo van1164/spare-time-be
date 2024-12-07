@@ -8,3 +8,5 @@
 out/
 
 src/main/resources/application-*.properties
+
+build/
