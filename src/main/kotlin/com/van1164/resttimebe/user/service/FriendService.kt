@@ -20,10 +20,10 @@ class FriendService(
             ?: throw GlobalExceptions.NotFoundException(SOME_USERS_NOT_FOUND)
     }
 
-    fun addFriend(userId: String, friendId: String, friendName: String?): Friend {
+    fun addFriend(userId: String, friendId: String, friendName: String? = null): Friend {
         val user = userReadService.getById(userId)
-        val friend = userReadService.getById(friendId).let {
-            Friend(userId, friendName ?: it.name)
+        val friend = userReadService.getById(friendId).run {
+            Friend(friendId, friendName ?: name)
         }
         if (user.friends.any { it.id == friendId }) {
             throw GlobalExceptions.InternalErrorException(FRIEND_ALREADY_EXIST)

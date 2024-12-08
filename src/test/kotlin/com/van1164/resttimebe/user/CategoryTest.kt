@@ -25,11 +25,11 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `getCategoryList should return all categories successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val category1 = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
-        val category2 = categoryService.addCategoryToUser(userId, "category2", "#000000")
+        val user = userRepository.save(createUser())
+        val category1 = categoryService.addCategoryToUser(user.userId, "category1", "#FFFFFF")
+        val category2 = categoryService.addCategoryToUser(user.userId, "category2", "#000000")
 
-        val categories = categoryService.getCategoryList(userId)
+        val categories = categoryService.getCategoryList(user.userId)
 
         assertThat(categories).hasSize(2)
         assertThat(categories[0].categoryId).isEqualTo(category1.categoryId)
@@ -38,29 +38,29 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `getCategoryById should return category successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val category = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
+        val user = userRepository.save(createUser())
+        val category = categoryService.addCategoryToUser(user.userId, "category1", "#FFFFFF")
 
-        val foundCategory = categoryService.getCategoryById(userId, category.categoryId)
+        val foundCategory = categoryService.getCategoryById(user.userId, category.categoryId)
 
         assertThat(foundCategory.categoryId).isEqualTo(category.categoryId)
     }
 
     @Test
     fun `getCategoryById should throw exception when category not found`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
+        val user = userRepository.save(createUser())
+        categoryService.addCategoryToUser(user.userId, "category1", "#FFFFFF")
 
         assertThatThrownBy {
-            categoryService.getCategoryById(userId, "notFoundCategoryId")
+            categoryService.getCategoryById(user.userId, "notFoundCategoryId")
         }.isInstanceOf(NotFoundException::class.java)
             .hasMessage(CATEGORY_NOT_FOUND.message)
     }
 
     @Test
     fun `addCategoryToUser should add category successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val category = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
+        val user = userRepository.save(createUser())
+        val category = categoryService.addCategoryToUser(user.userId, "category1", "#FFFFFF")
 
         assertThat(category.categoryName).isEqualTo("category1")
         assertThat(category.color).isEqualTo("#FFFFFF")
@@ -68,10 +68,10 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `updateCategory should update category successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val category = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
+        val user = userRepository.save(createUser())
+        val category = categoryService.addCategoryToUser(user.userId, "category1", "#FFFFFF")
 
-        val updatedCategory = categoryService.updateCategory(userId, category.categoryId, "category2", "#000000")
+        val updatedCategory = categoryService.updateCategory(user.userId, category.categoryId, "category2", "#000000")
 
         assertThat(updatedCategory.categoryName).isEqualTo("category2")
         assertThat(updatedCategory.color).isEqualTo("#000000")
@@ -79,10 +79,10 @@ class CategoryTest @Autowired constructor(
 
     @Test
     fun `removeCategoryFromUser should remove category successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val category = categoryService.addCategoryToUser(userId, "category1", "#FFFFFF")
+        val user = userRepository.save(createUser())
+        val category = categoryService.addCategoryToUser(user.userId, "category1", "#FFFFFF")
 
-        val removedCategory = categoryService.removeCategoryFromUser(userId, category.categoryId)
+        val removedCategory = categoryService.removeCategoryFromUser(user.userId, category.categoryId)
 
         assertThat(removedCategory.categoryId).isEqualTo(category.categoryId)
     }

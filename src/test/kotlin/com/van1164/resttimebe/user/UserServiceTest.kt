@@ -22,31 +22,27 @@ class UserServiceTest @Autowired constructor(
 
     @Test
     fun `getFriendList should return correct friend list successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val (another1Id, another2Id) = userRepository.saveAll(listOf(createUser(), createUser())).map {
-            it.validateAndGetId()
-        }
-        userService.addFriend(userId, another1Id, null)
-        userService.addFriend(userId, another2Id, null)
+        val user = userRepository.save(createUser())
+        val (other1, other2) = userRepository.saveAll(listOf(createUser(), createUser()))
+        userService.addFriend(user.userId, other1.userId, null)
+        userService.addFriend(user.userId, other2.userId, null)
 
-        val friendList = userService.getFriendList(userId)
+        val friendList = userService.getFriendList(user.userId)
 
         assertThat(friendList).hasSize(2)
-        assertThat(friendList.map { it.id }).containsExactlyInAnyOrder(another1Id, another2Id)
+        assertThat(friendList.map { it.id }).containsExactlyInAnyOrder(other1.userId, other2.userId)
     }
 
     @Test
     fun `addMembersToGroup should add members to group successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val (another1Id, another2Id) = userRepository.saveAll(listOf(createUser(), createUser())).map {
-            it.validateAndGetId()
-        }
-        val group = userService.addGroupToUser(userId, "group1", emptyList())
+        val user = userRepository.save(createUser())
+        val (other1, other2) = userRepository.saveAll(listOf(createUser(), createUser()))
+        val group = userService.addGroupToUser(user.userId, "group1", emptyList())
 
-        val groupWithMembers = userService.addMembersToGroup(userId, group.groupId, listOf(another1Id, another2Id))
+        val groupWithMembers = userService.addMembersToGroup(user.userId, group.groupId, listOf(other1.userId, other2.userId))
 
         assertThat(groupWithMembers.currentMemberIdList).hasSize(2)
-        assertThat(groupWithMembers.currentMemberIdList.map { it }).containsExactlyInAnyOrder(another1Id, another2Id)
+        assertThat(groupWithMembers.currentMemberIdList.map { it }).containsExactlyInAnyOrder(other1.userId, other2.userId)
     }
 
 }

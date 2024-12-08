@@ -37,8 +37,7 @@ class OAuthSuccessHandler(
         val refreshToken :String = jwtUtil.generateRefreshToken(username = userId)
 
         response.sendRedirect(
-            corsFrontend +
-                    "?access_token=" + accessToken +"&refresh_token="+refreshToken
+            """$corsFrontend?access_token=$accessToken&refresh_token=$refreshToken"""
         )
     }
 

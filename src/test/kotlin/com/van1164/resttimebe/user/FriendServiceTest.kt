@@ -25,102 +25,98 @@ class FriendServiceTest @Autowired constructor(
 
     @Test
     fun `getFriendList should return correct friend list successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val (anotherId1, anotherId2) = userRepository.saveAll(listOf(createUser(), createUser()))
-            .map {
-                it.validateAndGetId()
-            }
-        friendService.addFriend(userId, anotherId1, null)
-        friendService.addFriend(userId, anotherId2, null)
+        val user = userRepository.save(createUser())
+        val (other1, other2) = userRepository.saveAll(listOf(createUser(), createUser()))
+        friendService.addFriend(user.userId, other1.userId)
+        friendService.addFriend(user.userId, other2.userId)
 
-        val friendList = friendService.getFriendList(userId)
+        val friendList = friendService.getFriendList(user.userId)
 
         assertThat(friendList).hasSize(2)
-        assertThat(friendList.map { it.id }).containsExactlyInAnyOrder(anotherId1, anotherId2)
+        assertThat(friendList.map { it.id }).containsExactlyInAnyOrder(other1.userId, other2.userId)
     }
 
     @Test
     fun `getFriendById should return correct friend successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val anotherId = userRepository.save(createUser()).validateAndGetId()
-        friendService.addFriend(userId, anotherId, null)
+        val user = userRepository.save(createUser())
+        val another = userRepository.save(createUser())
+        friendService.addFriend(user.userId, another.userId)
 
-        val friend = friendService.getFriendById(userId, anotherId)
+        val friend = friendService.getFriendById(user.userId, another.userId)
 
-        assertThat(friend.id).isEqualTo(anotherId)
+        assertThat(friend.id).isEqualTo(another.userId)
     }
 
     @Test
     fun `getFriendById should throw exception when friend not found`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val anotherId = userRepository.save(createUser()).validateAndGetId()
-        friendService.addFriend(userId, anotherId, null)
+        val user = userRepository.save(createUser())
+        val another = userRepository.save(createUser())
+        friendService.addFriend(user.userId, another.userId, null)
 
-        assertThatThrownBy { friendService.getFriendById(userId, "notFound") }
+        assertThatThrownBy { friendService.getFriendById(user.userId, "notFound") }
             .isInstanceOf(NotFoundException::class.java)
             .hasMessage(SOME_USERS_NOT_FOUND.message)
     }
 
     @Test
     fun `addFriend should add friend successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val anotherId = userRepository.save(createUser()).validateAndGetId()
+        val user = userRepository.save(createUser())
+        val another = userRepository.save(createUser())
 
-        val friend = friendService.addFriend(userId, anotherId, null)
+        val friend = friendService.addFriend(user.userId, another.userId)
 
-        assertThat(friend.id).isEqualTo(anotherId)
+        assertThat(friend.id).isEqualTo(another.userId)
     }
 
     @Test
     fun `addFriend should throw exception when friend not found`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
+        val user = userRepository.save(createUser())
 
-        assertThatThrownBy { friendService.addFriend(userId, "notFound", null) }
+        assertThatThrownBy { friendService.addFriend(user.userId, "notFound") }
             .isInstanceOf(NotFoundException::class.java)
             .hasMessage(USER_NOT_FOUND.message)
     }
 
     @Test
     fun `addFriend should throw exception when already friend`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val anotherId = userRepository.save(createUser()).validateAndGetId()
-        friendService.addFriend(userId, anotherId, null)
+        val user = userRepository.save(createUser())
+        val another = userRepository.save(createUser())
+        friendService.addFriend(user.userId, another.userId)
 
-        assertThatThrownBy { friendService.addFriend(userId, anotherId, null) }
+        assertThatThrownBy { friendService.addFriend(user.userId, another.userId) }
             .isInstanceOf(InternalErrorException::class.java)
             .hasMessage(FRIEND_ALREADY_EXIST.message)
     }
 
     @Test
     fun `addFriend should use default friend name when friend name is null`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
+        val user = userRepository.save(createUser())
         val another = userRepository.save(createUser())
-        val anotherId = another.validateAndGetId()
 
-        val friend = friendService.addFriend(userId, anotherId, null)
+        val friend = friendService.addFriend(user.userId, another.userId)
 
         assertThat(friend.displayName).isEqualTo(another.name)
     }
 
     @Test
     fun `addFriend should use custom friend name when friend name is not null`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val anotherId = userRepository.save(createUser()).validateAndGetId()
+        val user = userRepository.save(createUser())
+        val another = userRepository.save(createUser())
 
-        val friend = friendService.addFriend(userId, anotherId, "customName")
+        val friend = friendService.addFriend(user.userId, another.userId, "customName")
 
         assertThat(friend.displayName).isEqualTo("customName")
     }
 
     @Test
     fun `removeFriend should remove friend successfully`() {
-        val userId = userRepository.save(createUser()).validateAndGetId()
-        val anotherId = userRepository.save(createUser()).validateAndGetId()
-        friendService.addFriend(userId, anotherId, null)
+        val user = userRepository.save(createUser())
+        val another = userRepository.save(createUser())
+        friendService.addFriend(user.userId, another.userId)
 
-        friendService.removeFriend(userId, anotherId)
+        friendService.removeFriend(user.userId, another.userId)
 
-        val friendList = friendService.getFriendList(userId)
+        val friendList = friendService.getFriendList(user.userId)
         assertThat(friendList).isEmpty()
     }
 

@@ -32,7 +32,6 @@ class ScheduleServiceTest @Autowired constructor(
     @Test
     fun `getSchedules should return schedules within date ranges`() {
         val user = userRepository.save(createUser())
-        val userId = user.validateAndGetId()
         val schedule1 = createSchedule(
             user,
             LocalDate.now().minusDays(5).atStartOfDay(),
@@ -46,7 +45,7 @@ class ScheduleServiceTest @Autowired constructor(
         scheduleRepository.saveAll(listOf(schedule1, schedule2))
 
         val schedules = scheduleService.getSchedules(
-            userId,
+            user.userId,
             LocalDate.now().minusDays(2).atStartOfDay(),
             LocalDate.now().plusDays(1).atStartOfDay()
         )
