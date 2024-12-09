@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 class ScheduleFixture {
     companion object {
         fun createSchedule(user: User): Schedule {
-            val userId = user.id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
+            val userId = user.userId
             return Schedule (
                 userId = userId,
                 startTime = LocalDateTime.now(),
@@ -23,7 +23,7 @@ class ScheduleFixture {
         }
 
         fun createSchedule(user: User, startTime: LocalDateTime, endTime: LocalDateTime): Schedule {
-            val userId = user.id ?: throw IllegalStateException(USER_ID_NOT_INITIALIZED)
+            val userId = user.userId
             return Schedule (
                 userId = userId,
                 startTime = startTime,

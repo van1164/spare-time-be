@@ -15,7 +15,7 @@ class ScheduleRepositoryImpl (
         return mongoTemplate.find(
             Query().addCriteria(
                 Criteria.where("userId").`is`(userId)
-                    .orOperator(
+                    .andOperator(
                         Criteria().orOperator(
                             Criteria.where("startTime").gte(rangeStart).lte(rangeEnd),
                             Criteria.where("endTime").gte(rangeStart).lte(rangeEnd)

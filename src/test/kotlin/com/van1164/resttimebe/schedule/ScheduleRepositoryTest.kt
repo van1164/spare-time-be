@@ -15,8 +15,8 @@ class ScheduleRepositoryTest @Autowired constructor (
     fun `database connection should be successful`() {
         val user = createUser()
 
-        userRepository.save(user)
+        val foundUser = userRepository.save(user)
 
-        assertThat(user.id).isNotNull()
+        assertThat(foundUser.id).isNotNull()
     }
 }
