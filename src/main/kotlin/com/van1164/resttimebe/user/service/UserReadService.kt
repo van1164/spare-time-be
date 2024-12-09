@@ -13,4 +13,8 @@ class UserReadService (
     fun getById(userId: String): User {
         return userRepository.findByUserId(userId) ?: throw GlobalExceptions.NotFoundException(USER_NOT_FOUND)
     }
+
+    fun getAllByUserIdList(userIdList: List<String>): List<User> {
+        return userRepository.findAllByUserIdIn(userIdList)
+    }
 }

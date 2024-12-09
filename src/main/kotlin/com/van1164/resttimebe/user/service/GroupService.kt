@@ -25,7 +25,7 @@ class GroupService (
 
     fun addGroupToUser(userId: String, groupName: String, userIdList: List<String>): Group {
         val user = userReadService.getById(userId)
-        checkAllUsersExist(userId, userIdList)
+        checkAllUsersExist(userIdList)
 
         val newGroup = Group(groupName = groupName, userIdList = userIdList)
         val updatedGroups = user.groups + newGroup
@@ -38,7 +38,7 @@ class GroupService (
     fun addMembersToGroup(userId: String, groupId: String, userIdList: List<String>): GroupMemberUpdateResult {
         val user = userReadService.getById(userId)
         val group = getGroupById(user, groupId)
-        checkAllUsersExist(userId, userIdList)
+        checkAllUsersExist(userIdList)
 
         val updatedGroup = group.copy(userIdList = group.userIdList + userIdList)
         val updatedGroups = user.groups.map { if (it.groupId == groupId) updatedGroup else it }
@@ -57,7 +57,7 @@ class GroupService (
     fun removeMembersFromGroup(userId: String, groupId: String, userIdList: List<String>): GroupMemberUpdateResult {
         val user = userReadService.getById(userId)
         val group = getGroupById(user, groupId)
-        checkAllUsersExist(userId, userIdList)
+        checkAllUsersExist(userIdList)
 
         val updatedGroup = group.copy(userIdList = group.userIdList - userIdList.toSet())
         val updatedGroups = user.groups.map { if (it.groupId == groupId) updatedGroup else it }
@@ -93,8 +93,9 @@ class GroupService (
             ?: throw GlobalExceptions.NotFoundException(GROUP_NOT_FOUND)
     }
 
-    private fun checkAllUsersExist(userId: String, memberIdList: List<String>) {
-        if (userRepository.findAllById(memberIdList).size != memberIdList.size) {
+    //TODO: id가 아닌, userId로 검색돼야 함
+    private fun checkAllUsersExist(memberIdList: List<String>) {
+        if (userReadService.getAllByUserIdList(memberIdList).size != memberIdList.size) {
             throw GlobalExceptions.NotFoundException(SOME_USERS_NOT_FOUND)
         }
     }

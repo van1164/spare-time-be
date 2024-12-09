@@ -1,7 +1,6 @@
 package com.van1164.resttimebe.schedule
 
-import com.van1164.resttimebe.common.exception.ErrorCode
-import com.van1164.resttimebe.common.exception.ErrorCode.*
+import com.van1164.resttimebe.common.exception.ErrorCode.SCHEDULE_NOT_FOUND
 import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
@@ -9,7 +8,8 @@ import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
 import com.van1164.resttimebe.user.repository.UserRepository
 import com.van1164.resttimebe.util.DatabaseIdHelper.Companion.validateAndGetId
-import org.assertj.core.api.Assertions.*
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,7 +32,6 @@ class ScheduleServiceTest @Autowired constructor(
     @Test
     fun `getSchedules should return schedules within date ranges`() {
         val user = userRepository.save(createUser())
-        val userId = user.validateAndGetId()
         val schedule1 = createSchedule(
             user,
             LocalDate.now().minusDays(5).atStartOfDay(),
@@ -46,7 +45,7 @@ class ScheduleServiceTest @Autowired constructor(
         scheduleRepository.saveAll(listOf(schedule1, schedule2))
 
         val schedules = scheduleService.getSchedules(
-            userId,
+            user.userId,
             LocalDate.now().minusDays(2).atStartOfDay(),
             LocalDate.now().plusDays(1).atStartOfDay()
         )
