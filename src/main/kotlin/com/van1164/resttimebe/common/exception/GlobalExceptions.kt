@@ -5,4 +5,5 @@ class GlobalExceptions {
     class NotFoundException(errorCode: ErrorCode): GlobalException(errorCode)
     class InternalErrorException(errorCode: ErrorCode): GlobalException(errorCode)
     class IllegalStateException(errorCode: ErrorCode): GlobalException(errorCode)
+    class BadRequestException(errorCode: ErrorCode): GlobalException(errorCode)
 }

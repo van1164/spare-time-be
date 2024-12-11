@@ -17,7 +17,7 @@ class ScheduleFixture {
                 startTime = LocalDateTime.now(),
                 endTime = LocalDateTime.now().plusHours(1),
                 repeatType = RepeatType.NONE,
-                participants = List(1) { userId },
+                participants = setOf(userId),
                 status = ScheduleStatus.CONFIRMED,
             )
         }
@@ -29,7 +29,7 @@ class ScheduleFixture {
                 startTime = startTime,
                 endTime = endTime,
                 repeatType = RepeatType.NONE,
-                participants = List(1) { userId },
+                participants = setOf(userId),
                 status = ScheduleStatus.CONFIRMED,
             )
         }

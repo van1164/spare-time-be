@@ -11,7 +11,7 @@ data class CreateScheduleRequest(
     val startTime: LocalDateTime,
     val endTime: LocalDateTime,
     val repeatType: RepeatType,
-    val participants: List<String>,
+    val participants: Set<String>,
     val status: ScheduleStatus = ScheduleStatus.PENDING
 ) {
     fun toDomain(userId: String): Schedule {

@@ -2,8 +2,11 @@ package com.van1164.resttimebe.schedule
 
 import com.van1164.resttimebe.common.exception.ErrorCode.SCHEDULE_NOT_FOUND
 import com.van1164.resttimebe.common.exception.GlobalExceptions
+import com.van1164.resttimebe.domain.RepeatType.NONE
+import com.van1164.resttimebe.domain.ScheduleStatus
 import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
+import com.van1164.resttimebe.schedule.repository.OneTimeSchedulesRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
 import com.van1164.resttimebe.user.repository.UserRepository
@@ -20,11 +23,13 @@ import java.time.temporal.ChronoUnit
 @SpringBootTest
 class ScheduleServiceTest @Autowired constructor(
     private val scheduleService: ScheduleService,
+    private val oneTimeSchedulesRepository: OneTimeSchedulesRepository,
     private val scheduleRepository: ScheduleRepository,
     private val userRepository: UserRepository
 ) {
     @BeforeEach
     fun setUp() {
+        oneTimeSchedulesRepository.deleteAll()
         scheduleRepository.deleteAll()
         userRepository.deleteAll()
     }
@@ -42,7 +47,7 @@ class ScheduleServiceTest @Autowired constructor(
             LocalDate.now().minusDays(1).atStartOfDay(),
             LocalDate.now().atStartOfDay()
         )
-        scheduleRepository.saveAll(listOf(schedule1, schedule2))
+        scheduleRepository.saveAll(setOf(schedule1, schedule2))
 
         val schedules = scheduleService.getSchedules(
             user.userId,
@@ -78,6 +83,75 @@ class ScheduleServiceTest @Autowired constructor(
         assertThatThrownBy { scheduleService.getById("not-found") }
             .isInstanceOf(GlobalExceptions.NotFoundException::class.java)
             .hasMessage(SCHEDULE_NOT_FOUND.message)
+    }
+
+    @Test
+    fun `create should create schedule successfully`() {
+        val user = userRepository.save(createUser())
+        val request = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().plusMonths(3).atStartOfDay(),
+            repeatType = NONE,
+            participants = setOf(user.userId)
+        )
+
+        val createdSchedule = scheduleService.create(user.userId, request)
+
+        assertThat(createdSchedule.userId).isEqualTo(user.userId)
+        assertThat(createdSchedule.startTime).isEqualTo(request.startTime)
+        assertThat(createdSchedule.endTime).isEqualTo(request.endTime)
+        assertThat(createdSchedule.repeatType).isEqualTo(request.repeatType)
+        assertThat(createdSchedule.participants).isEqualTo(request.participants)
+        assertThat(createdSchedule.status).isEqualTo(ScheduleStatus.PENDING)
+    }
+
+    @Test
+    fun `insertOneTimeSchedules should save inverted index in collection`() {
+        // given
+        val user = userRepository.save(createUser())
+        val request = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().plusMonths(3).atStartOfDay(),
+            repeatType = NONE,
+            participants = setOf(user.userId)
+        )
+
+        // when
+        val savedSchedule = scheduleService.create(user.userId, request)
+
+        // then
+        val oneTimeSchedules = oneTimeSchedulesRepository.findAll()
+        assertThat(oneTimeSchedules[0].userId).isEqualTo(user.userId)
+        assertThat(oneTimeSchedules).hasSize(4)
+        assertThat(oneTimeSchedules[0].schedules.contains(savedSchedule.id)).isTrue()
+    }
+
+    @Test
+    fun `insertOneTimeSchedules should save inverted index via bulk write`() {
+        // given
+        val user = userRepository.save(createUser())
+        val request1 = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().plusMonths(3).atStartOfDay(),
+            repeatType = NONE,
+            participants = setOf(user.userId)
+        )
+        val request2 = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().plusMonths(5).atStartOfDay(),
+            repeatType = NONE,
+            participants = setOf(user.userId)
+        )
+
+        // when
+        val savedSchedule1 = scheduleService.create(user.userId, request1)
+        val savedSchedule2 = scheduleService.create(user.userId, request2)
+
+        // then
+        val oneTimeSchedules = oneTimeSchedulesRepository.findAll()
+        assertThat(oneTimeSchedules[0].userId).isEqualTo(user.userId)
+        assertThat(oneTimeSchedules).hasSize(6)
+        assertThat(oneTimeSchedules[0].schedules.containsAll(setOf(savedSchedule1.id, savedSchedule2.id))).isTrue()
     }
 
     @Test
