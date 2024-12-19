@@ -5,22 +5,22 @@ import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.UpdateOptions
 import com.mongodb.client.model.Updates
 import com.van1164.resttimebe.common.exception.ErrorCode
-import com.van1164.resttimebe.common.exception.GlobalExceptions.*
-import com.van1164.resttimebe.domain.RepeatType.*
+import com.van1164.resttimebe.common.exception.GlobalExceptions.NotFoundException
+import com.van1164.resttimebe.domain.RepeatType.NONE
 import com.van1164.resttimebe.domain.Schedule
-import com.van1164.resttimebe.schedule.repository.OneTimeSchedulesRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
 import org.bson.Document
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.YearMonth
 
 @Service
+@Transactional
 class ScheduleService(
     private val scheduleRepository: ScheduleRepository,
-    private val oneTimeSchedulesRepository: OneTimeSchedulesRepository,
     private val mongoTemplate: MongoTemplate
 ) {
     fun getSchedules(
@@ -28,7 +28,11 @@ class ScheduleService(
         rangeStart: LocalDateTime,
         rangeEnd: LocalDateTime
     ): List<Schedule> {
-        return scheduleRepository.findSchedules(userId, rangeStart, rangeEnd)
+        val oneTimeScheduleList = scheduleRepository.getOneTimeScheduleList(userId, rangeStart, rangeEnd)
+        val oneTimeSchedules = scheduleRepository.findAllById(oneTimeScheduleList)
+        val recurringSchedules = scheduleRepository.getRecurringSchedules(userId, rangeStart, rangeEnd)
+
+        return oneTimeSchedules + recurringSchedules
     }
 
     fun getById(scheduleId: String): Schedule {
@@ -40,26 +44,25 @@ class ScheduleService(
     fun create(userId: String, request: CreateScheduleRequest): Schedule {
         val savedSchedule = scheduleRepository.save(request.toDomain(userId))
 
-        when (request.repeatType) {
-            NONE -> {
-                insertOneTimeSchedules(request.participants, savedSchedule)
-            }
-            DAILY, WEEKLY, MONTHLY -> {
-                // Recurring schedules 에 삽입하는 private 메서드
-            }
-
-            else -> throw BadRequestException(ErrorCode.INVALID_REPEAT_TYPE)
+        if (request.repeatType == NONE) {
+            insertOneTimeSchedules(request.participants, savedSchedule)
         }
 
         return savedSchedule
     }
 
     fun update(scheduleId: String, request: CreateScheduleRequest): Schedule {
-        val schedule = getById(scheduleId)
+        val found = getById(scheduleId)
+        if (found.repeatType != NONE && request.repeatType == NONE) {
+             insertOneTimeSchedules(request.participants, found)
+        }
+        else if (found.repeatType == NONE && request.repeatType != NONE) {
+            removeOneTimeSchedules(request.participants, found)
+        }
         return scheduleRepository.save(
             Schedule(
-                id = schedule.id,
-                userId = schedule.userId,
+                id = found.id,
+                userId = found.userId,
                 category = request.category,
                 startTime = request.startTime,
                 endTime = request.endTime,
@@ -71,6 +74,8 @@ class ScheduleService(
     }
 
     fun delete(scheduleId: String) {
+        val schedule = getById(scheduleId)
+        removeOneTimeSchedules(schedule.participants, schedule)
         scheduleRepository.deleteById(scheduleId)
     }
 

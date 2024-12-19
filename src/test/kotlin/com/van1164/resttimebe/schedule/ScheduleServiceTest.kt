@@ -13,12 +13,19 @@ import com.van1164.resttimebe.user.repository.UserRepository
 import com.van1164.resttimebe.util.DatabaseIdHelper.Companion.validateAndGetId
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import java.util.stream.Stream
 
 @SpringBootTest
 class ScheduleServiceTest @Autowired constructor(
@@ -34,32 +41,42 @@ class ScheduleServiceTest @Autowired constructor(
         userRepository.deleteAll()
     }
 
-    @Test
-    fun `getSchedules should return schedules within date ranges`() {
+    @ParameterizedTest
+    @MethodSource("provideSchedulesAndDateRanges")
+    fun `getSchedules should check if schedule is within date range`(
+        testName: String,
+        scheduleStartTime: LocalDateTime,
+        scheduleEndTime: LocalDateTime,
+        rangeStart: LocalDateTime,
+        rangeEnd: LocalDateTime,
+        hasOverlap: Boolean
+    ) {
+        println("Running test: $testName")
+
         val user = userRepository.save(createUser())
-        val schedule1 = createSchedule(
-            user,
-            LocalDate.now().minusDays(5).atStartOfDay(),
-            LocalDate.now().minusDays(4).atStartOfDay()
+        val request = CreateScheduleRequest(
+            startTime = scheduleStartTime,
+            endTime = scheduleEndTime,
+            repeatType = NONE,
+            participants = setOf(user.userId)
         )
-        val schedule2 = createSchedule(
-            user,
-            LocalDate.now().minusDays(1).atStartOfDay(),
-            LocalDate.now().atStartOfDay()
-        )
-        scheduleRepository.saveAll(setOf(schedule1, schedule2))
+
+        scheduleService.create(user.userId, request)
 
         val schedules = scheduleService.getSchedules(
             user.userId,
-            LocalDate.now().minusDays(2).atStartOfDay(),
-            LocalDate.now().plusDays(1).atStartOfDay()
+            rangeStart,
+            rangeEnd
         )
 
-        assertThat(schedules).hasSize(1)
-        assertThat(schedules[0].userId).isEqualTo(schedule2.userId)
-        assertThat(schedules[0].startTime).isEqualTo(schedule2.startTime)
-        assertThat(schedules[0].endTime).isEqualTo(schedule2.endTime)
+        if (hasOverlap) {
+            assertEquals(1, schedules.size)
+            assertEquals(user.userId, schedules[0].userId)
+        } else {
+            assertTrue(schedules.isEmpty())
+        }
     }
+
 
     @Test
     fun `getById should return schedule successfully`() {
@@ -187,5 +204,99 @@ class ScheduleServiceTest @Autowired constructor(
         scheduleService.delete(scheduleId)
 
         assertThat(scheduleRepository.findById(scheduleId)).isEmpty
+    }
+
+    companion object {
+        @JvmStatic
+        fun provideSchedulesAndDateRanges(): Stream<Arguments> = Stream.of(
+            Arguments.of(
+                "Case 1: Same year",
+                LocalDateTime.of(2023, 2, 1, 0, 0),
+                LocalDateTime.of(2023, 2, 28, 23, 59),
+                LocalDateTime.of(2023, 1, 1, 0, 0),
+                LocalDateTime.of(2023, 3, 31, 23, 59),
+                true
+            ),
+            Arguments.of(
+                "Case 1: Same year - Excluded",
+                LocalDateTime.of(2023, 4, 1, 0, 0),
+                LocalDateTime.of(2023, 4, 30, 23, 59),
+                LocalDateTime.of(2023, 1, 1, 0, 0),
+                LocalDateTime.of(2023, 3, 31, 23, 59),
+                false
+            ),
+            Arguments.of(
+                "Case 2: Different years",
+                LocalDateTime.of(2022, 12, 1, 0, 0),
+                LocalDateTime.of(2022, 12, 31, 23, 59),
+                LocalDateTime.of(2022, 12, 1, 0, 0),
+                LocalDateTime.of(2023, 2, 28, 23, 59),
+                true
+            ),
+            Arguments.of(
+                "Case 2: Different years",
+                LocalDateTime.of(2023, 1, 1, 0, 0),
+                LocalDateTime.of(2023, 1, 31, 23, 59),
+                LocalDateTime.of(2022, 12, 1, 0, 0),
+                LocalDateTime.of(2023, 2, 28, 23, 59),
+                true
+            ),
+            Arguments.of(
+                "Case 2: Excluded",
+                LocalDateTime.of(2023, 3, 1, 0, 0),
+                LocalDateTime.of(2023, 3, 31, 23, 59),
+                LocalDateTime.of(2022, 12, 1, 0, 0),
+                LocalDateTime.of(2023, 2, 28, 23, 59),
+                false
+            ),
+            Arguments.of(
+                "Case 3: Extended range",
+                LocalDateTime.of(2023, 6, 1, 0, 0),
+                LocalDateTime.of(2023, 6, 30, 23, 59),
+                LocalDateTime.of(2022, 12, 1, 0, 0),
+                LocalDateTime.of(2024, 1, 31, 23, 59),
+                true
+            ),
+            Arguments.of(
+                "Case 4: Specific months",
+                LocalDateTime.of(2023, 2, 1, 0, 0),
+                LocalDateTime.of(2023, 2, 28, 23, 59),
+                LocalDateTime.of(2023, 2, 1, 0, 0),
+                LocalDateTime.of(2023, 3, 31, 23, 59),
+                true
+            ),
+            Arguments.of(
+                "Case 4: Specific months",
+                LocalDateTime.of(2023, 3, 1, 0, 0),
+                LocalDateTime.of(2023, 3, 31, 23, 59),
+                LocalDateTime.of(2023, 2, 1, 0, 0),
+                LocalDateTime.of(2023, 3, 31, 23, 59),
+                true
+            ),
+            Arguments.of(
+                "Case 4: Excluded",
+                LocalDateTime.of(2023, 4, 1, 0, 0),
+                LocalDateTime.of(2023, 4, 30, 23, 59),
+                LocalDateTime.of(2023, 2, 1, 0, 0),
+                LocalDateTime.of(2023, 3, 31, 23, 59),
+                false
+            ),
+            Arguments.of(
+                "Case 5: Full year range",
+                LocalDateTime.of(2023, 6, 1, 0, 0),
+                LocalDateTime.of(2023, 6, 30, 23, 59),
+                LocalDateTime.of(2023, 1, 1, 0, 0),
+                LocalDateTime.of(2023, 12, 31, 23, 59),
+                true
+            ),
+            Arguments.of(
+                "Case 6: Included",
+                LocalDateTime.of(2023, 12, 31, 23, 59),
+                LocalDateTime.of(2024, 1, 1, 0, 0),
+                LocalDateTime.of(2023, 1, 1, 0, 0),
+                LocalDateTime.of(2023, 12, 31, 23, 59),
+                true
+            ),
+        )
     }
 }
