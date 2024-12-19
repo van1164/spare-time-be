@@ -123,7 +123,7 @@ class ScheduleServiceTest @Autowired constructor(
     }
 
     @Test
-    fun `insertOneTimeSchedules should save inverted index in collection`() {
+    fun `upsertOneTimeSchedules should save inverted index in collection`() {
         // given
         val user = userRepository.save(createUser())
         val request = CreateScheduleRequest(
@@ -144,7 +144,7 @@ class ScheduleServiceTest @Autowired constructor(
     }
 
     @Test
-    fun `insertOneTimeSchedules should save inverted index via bulk write`() {
+    fun `upsertOneTimeSchedules should save inverted index via bulk write`() {
         // given
         val user = userRepository.save(createUser())
         val request1 = CreateScheduleRequest(
@@ -197,13 +197,170 @@ class ScheduleServiceTest @Autowired constructor(
     }
 
     @Test
+    fun `update should add new participants and their schedules`() {
+        // given
+        val user1 = userRepository.save(createUser("user1"))
+        val user2 = userRepository.save(createUser("user2"))
+        val createRequest = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().atStartOfDay().plusHours(3),
+            repeatType = NONE,
+            participants = setOf(user1.userId)
+        )
+        val schedule = scheduleService.create(user1.userId, createRequest)
+
+        val request = CreateScheduleRequest(
+            startTime = schedule.startTime,
+            endTime = schedule.endTime,
+            repeatType = schedule.repeatType,
+            participants = setOf(user1.userId, user2.userId),
+            status = schedule.status
+        )
+
+        // when
+        val updatedSchedule = scheduleService.update(schedule.id!!, request)
+
+        // then
+        val oneTimeSchedules = oneTimeSchedulesRepository.findAll()
+        assertThat(oneTimeSchedules).hasSize(2) // 2 participants now
+        assertThat(oneTimeSchedules.any { it.userId == user2.userId }).isTrue()
+        assertThat(updatedSchedule.participants).containsExactlyInAnyOrder(user1.userId, user2.userId)
+    }
+
+    @Test
+    fun `update should remove participants and their schedules`() {
+        // given
+        val user1 = userRepository.save(createUser("user1"))
+        val user2 = userRepository.save(createUser("user2"))
+        val createRequest = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().atStartOfDay().plusHours(3),
+            repeatType = NONE,
+            participants = setOf(user1.userId, user2.userId)
+        )
+        val schedule = scheduleService.create(user1.userId, createRequest)
+
+        val updateRequest = CreateScheduleRequest(
+            startTime = schedule.startTime,
+            endTime = schedule.endTime,
+            repeatType = schedule.repeatType,
+            participants = setOf(user1.userId), // Remove user2
+            status = schedule.status
+        )
+
+        // when
+        val updatedSchedule = scheduleService.update(schedule.id!!, updateRequest)
+
+        // then
+        val oneTimeSchedules = oneTimeSchedulesRepository.findAll()
+        assertThat(oneTimeSchedules).hasSize(1) // Only user1 should remain
+        assertThat(oneTimeSchedules.any { it.userId == user2.userId }).isFalse()
+        assertThat(updatedSchedule.participants).containsExactly(user1.userId)
+    }
+
+    @Test
+    fun `update should modify time range for participants`() {
+        // given
+        val user = userRepository.save(createUser("user"))
+        val schedule = scheduleRepository.save(
+            createSchedule(user, startTime = LocalDate.now().atStartOfDay(), endTime = LocalDate.now().plusMonths(1).atStartOfDay())
+        )
+        val scheduleId = schedule.validateAndGetId()
+
+        val request = CreateScheduleRequest(
+            startTime = LocalDate.now().plusMonths(1).atStartOfDay(),
+            endTime = LocalDate.now().plusMonths(2).atStartOfDay(),
+            repeatType = schedule.repeatType,
+            participants = schedule.participants,
+            status = schedule.status
+        )
+
+        // when
+        val updatedSchedule = scheduleService.update(scheduleId, request)
+
+        // then
+        val oneTimeSchedules = oneTimeSchedulesRepository.findAll()
+        assertThat(oneTimeSchedules).hasSize(1) // Only 1 participant, but time range updated
+        assertThat(updatedSchedule.startTime).isEqualTo(request.startTime)
+        assertThat(updatedSchedule.endTime).isEqualTo(request.endTime)
+    }
+
+    @Test
+    fun `update should handle no changes gracefully`() {
+        // given
+        val user = userRepository.save(createUser("user"))
+        val createRequest = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().atStartOfDay().plusHours(3),
+            repeatType = NONE,
+            participants = setOf(user.userId)
+        )
+        val schedule = scheduleService.create(user.userId, createRequest)
+
+        val updateRequest = CreateScheduleRequest(
+            startTime = schedule.startTime,
+            endTime = schedule.endTime,
+            repeatType = schedule.repeatType,
+            participants = schedule.participants, // No changes in participants
+            status = schedule.status
+        )
+
+        // when
+        val updatedSchedule = scheduleService.update(schedule.id!!, updateRequest)
+
+        // then
+        val oneTimeSchedules = oneTimeSchedulesRepository.findAll()
+        assertThat(oneTimeSchedules).hasSize(1)
+        assertThat(updatedSchedule.participants).isEqualTo(schedule.participants)
+    }
+
+    @Test
+    fun `update should bulk write changes to the database`() {
+        // given
+        val user1 = userRepository.save(createUser("user1"))
+        val user2 = userRepository.save(createUser("user2"))
+        val createRequest = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().atStartOfDay().plusHours(3),
+            repeatType = NONE,
+            participants = setOf(user1.userId)
+        )
+        val schedule = scheduleService.create(user1.userId, createRequest)
+        val scheduleId = schedule.validateAndGetId()
+
+        val updateRequest = CreateScheduleRequest(
+            startTime = schedule.startTime.minusMonths(1),
+            endTime = schedule.endTime.plusMonths(1),
+            repeatType = schedule.repeatType,
+            participants = setOf(user1.userId, user2.userId),
+            status = schedule.status
+        )
+
+        // when
+        val updatedSchedule = scheduleService.update(scheduleId, updateRequest)
+
+        // then
+        val oneTimeSchedules = oneTimeSchedulesRepository.findAll()
+        assertThat(oneTimeSchedules).hasSize(6)
+        // Verify bulk write success
+    }
+
+
+    @Test
     fun `delete should delete schedule successfully`() {
         val user = userRepository.save(createUser())
-        val scheduleId = scheduleRepository.save(createSchedule(user)).validateAndGetId()
+        val createRequest = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().atStartOfDay().plusHours(3),
+            repeatType = NONE,
+            participants = setOf(user.userId)
+        )
+        val schedule = scheduleService.create(user.userId, createRequest)
 
-        scheduleService.delete(scheduleId)
+        scheduleService.delete(schedule.id!!)
 
-        assertThat(scheduleRepository.findById(scheduleId)).isEmpty
+        assertThat(scheduleRepository.findById(schedule.id!!)).isEmpty
+        assertThat(oneTimeSchedulesRepository.findAll()).isEmpty()
     }
 
     companion object {

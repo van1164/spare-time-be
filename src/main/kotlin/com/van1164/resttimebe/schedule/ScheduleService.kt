@@ -8,6 +8,7 @@ import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
 import org.bson.Document
+import org.bson.conversions.Bson
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -44,7 +45,16 @@ class ScheduleService(
         val savedSchedule = scheduleRepository.save(request.toDomain(userId))
 
         if (request.repeatType == NONE) {
-            insertOneTimeSchedules(request.participants, savedSchedule)
+            val operations = mutableListOf<UpdateOneModel<Document>>()
+            request.participants.forEach { participant ->
+                getYearMonthSequence(YearMonth.from(request.startTime), YearMonth.from(request.endTime)).forEach { time ->
+                    operations.add(upsertOneTimeSchedules(participant, time, savedSchedule))
+                }
+            }
+            if (operations.isNotEmpty()) {
+                mongoTemplate.db.getCollection("one_time_schedules")
+                    .bulkWrite(operations)
+            }
         }
 
         return savedSchedule
@@ -52,7 +62,7 @@ class ScheduleService(
 
     fun update(scheduleId: String, request: CreateScheduleRequest): Schedule {
         val found = getById(scheduleId)
-        val operations = mutableListOf<UpdateOneModel<Document>>()
+        val operations = mutableListOf<WriteModel<Document>>()
 
         // 시간 범위 계산
         val originalRange = YearMonth.from(found.startTime)..YearMonth.from(found.endTime)
@@ -61,14 +71,10 @@ class ScheduleService(
         val toAddTimes = getYearMonthSequence(updatedRange.start, updatedRange.endInclusive).filter { it !in originalRange }
 
         (found.participants - request.participants).forEach { participant ->
-            for (month in getYearMonthSequence(originalRange.start, originalRange.endInclusive)) {
-                val filter = Filters.and(
-                    Filters.eq("userId", participant),
-                    Filters.eq("partitionYear", month.year),
-                    Filters.eq("partitionMonth", month.monthValue)
-                )
-                val update = Updates.pull("schedules", found.id)
-                operations.add(UpdateOneModel(filter, update))
+            getYearMonthSequence(originalRange.start, originalRange.endInclusive).forEach { time ->
+                removeOneTimeSchedules(participant, time, found).forEach { operation ->
+                    operations.add(operation)
+                }
             }
         }
 
@@ -90,41 +96,22 @@ class ScheduleService(
                 emptySequence<YearMonth>()
             }
 
-            // 삭제 작업 추가
             timesToRemove.forEach { time ->
-                val filter = Filters.and(
-                    Filters.eq("userId", participant),
-                    Filters.eq("partitionYear", time.year),
-                    Filters.eq("partitionMonth", time.monthValue)
-                )
-                val update = Updates.pull("schedules", found.id)
-                operations.add(UpdateOneModel(filter, update))
+                removeOneTimeSchedules(participant, time, found).forEach { operation ->
+                    operations.add(operation)
+                }
             }
 
-            // 생성/업데이트 작업 추가
             timesToAdd.forEach { time ->
-                val filter = Filters.and(
-                    Filters.eq("userId", participant),
-                    Filters.eq("partitionYear", time.year),
-                    Filters.eq("partitionMonth", time.monthValue)
-                )
-                val update = Updates.combine(
-                    Updates.setOnInsert("userId", participant),
-                    Updates.setOnInsert("partitionYear", time.year),
-                    Updates.setOnInsert("partitionMonth", time.monthValue),
-                    Updates.addToSet("schedules", found.id)
-                )
-                operations.add(UpdateOneModel(filter, update, UpdateOptions().upsert(true)))
+                operations.add(upsertOneTimeSchedules(participant, time, found))
             }
         }
 
-        // 최적화된 연산 실행
         if (operations.isNotEmpty()) {
             mongoTemplate.db.getCollection("one_time_schedules")
                 .bulkWrite(operations)
         }
 
-        // 최종 저장
         return scheduleRepository.save(
             found.copy(
                 category = request.category,
@@ -139,107 +126,49 @@ class ScheduleService(
 
     fun delete(scheduleId: String) {
         val schedule = getById(scheduleId)
-        removeOneTimeSchedules(schedule.participants, schedule)
+        val operations = mutableListOf<WriteModel<Document>>()
+        schedule.participants.forEach { participant ->
+            getYearMonthSequence(YearMonth.from(schedule.startTime), YearMonth.from(schedule.endTime)).forEach { time ->
+                removeOneTimeSchedules(participant, time, schedule).forEach { operation ->
+                    operations.add(operation)
+                }
+            }
+        }
+        if (operations.isNotEmpty()) {
+            mongoTemplate.db.getCollection("one_time_schedules")
+                .bulkWrite(operations)
+        }
         scheduleRepository.deleteById(scheduleId)
     }
 
-    private fun insertOneTimeSchedules(userIdList: Set<String>, schedule: Schedule) {
-        val operations = mutableListOf<UpdateOneModel<Document>>()
-        var current = YearMonth.from(schedule.startTime)
-        val end = YearMonth.from(schedule.endTime)
-
-        for (userId in userIdList) {
-            while (current <= end) {
-                val partitionYear = current.year
-                val partitionMonth = current.monthValue
-
-                val filter = Filters.and(
-                    Filters.eq("userId", userId),
-                    Filters.eq("partitionYear", partitionYear),
-                    Filters.eq("partitionMonth", partitionMonth)
-                )
-                val update = Updates.combine(
-                    Updates.setOnInsert("userId", userId),
-                    Updates.setOnInsert("partitionYear", partitionYear),
-                    Updates.setOnInsert("partitionMonth", partitionMonth),
-                    Updates.addToSet("schedules", schedule.id)
-                )
-                operations.add(UpdateOneModel(filter, update, UpdateOptions().upsert(true)))
-
-                current = current.plusMonths(1)
-            }
-        }
-
-        if (operations.isNotEmpty()) {
-            mongoTemplate.db.getCollection("one_time_schedules")
-                .bulkWrite(operations)
-        }
+    private fun upsertOneTimeSchedules(userId: String, time: YearMonth, schedule: Schedule): UpdateOneModel<Document> {
+            val filter = Filters.and(
+                Filters.eq("userId", userId),
+                Filters.eq("partitionYear", time.year),
+                Filters.eq("partitionMonth", time.monthValue),
+            )
+            val update = Updates.combine(
+                Updates.setOnInsert("userId", userId),
+                Updates.setOnInsert("partitionYear", time.year),
+                Updates.setOnInsert("partitionMonth", time.monthValue),
+                Updates.addToSet("schedules", schedule.id)
+            )
+            return UpdateOneModel<Document>(filter, update, UpdateOptions().upsert(true))
     }
 
-    private fun syncUpdatedOneTimeSchedules(userIdList: Set<String>, schedule: Schedule) {
-        val operations = mutableListOf<UpdateOneModel<Document>>()
+    private fun removeOneTimeSchedules(userId: String, time: YearMonth, schedule: Schedule): List<WriteModel<Document>> {
+        val filter: Bson = Filters.and(
+            Filters.eq("userId", userId),
+            Filters.eq("partitionYear", time.year),
+            Filters.eq("partitionMonth", time.monthValue)
+        )
+        val pullUpdate: Bson = Updates.combine(Updates.pull("schedules", schedule.id))
+        val deleteCondition: Bson = Filters.and(filter, Filters.size("schedules", 0))
 
-        val originalRange = YearMonth.from(schedule.startTime)..YearMonth.from(schedule.endTime)
-        val updatedRange = YearMonth.from(schedule.startTime)..YearMonth.from(schedule.endTime)
-
-        for (userId in userIdList) {
-            for (month in getYearMonthSequence(originalRange.start, originalRange.endInclusive)) {
-                if (month !in updatedRange) {
-                    val filter = Filters.and(
-                        Filters.eq("userId", userId),
-                        Filters.eq("partitionYear", month.year),
-                        Filters.eq("partitionMonth", month.monthValue)
-                    )
-                    val update = Updates.pull("schedules", schedule.id)
-                    operations.add(UpdateOneModel(filter, update))
-                }
-            }
-
-            for (month in getYearMonthSequence(updatedRange.start, updatedRange.endInclusive)) {
-                if (month !in originalRange) {
-                    val filter = Filters.and(
-                        Filters.eq("userId", userId),
-                        Filters.eq("partitionYear", month.year),
-                        Filters.eq("partitionMonth", month.monthValue)
-                    )
-                    val update = Updates.combine(
-                        Updates.setOnInsert("userId", userId),
-                        Updates.setOnInsert("partitionYear", month.year),
-                        Updates.setOnInsert("partitionMonth", month.monthValue),
-                        Updates.addToSet("schedules", schedule.id)
-                    )
-                    operations.add(UpdateOneModel(filter, update, UpdateOptions().upsert(true)))
-                }
-            }
-        }
-
-
-        if (operations.isNotEmpty()) {
-            mongoTemplate.db.getCollection("one_time_schedules")
-                .bulkWrite(operations)
-        }
-    }
-
-    private fun removeOneTimeSchedules(userIdList: Set<String>, schedule: Schedule) {
-        val operations = mutableListOf<UpdateOneModel<Document>>()
-        val range = YearMonth.from(schedule.startTime)..YearMonth.from(schedule.endTime)
-
-        for (userId in userIdList) {
-            for (month in getYearMonthSequence(range.start, range.endInclusive)) {
-                val filter = Filters.and(
-                    Filters.eq("userId", userId),
-                    Filters.eq("partitionYear", month.year),
-                    Filters.eq("partitionMonth", month.monthValue)
-                )
-                val update = Updates.pull("schedules", schedule.id)
-                operations.add(UpdateOneModel(filter, update))
-            }
-        }
-
-        if (operations.isNotEmpty()) {
-            mongoTemplate.db.getCollection("one_time_schedules")
-                .bulkWrite(operations)
-        }
+        return listOf(
+            UpdateOneModel(filter, pullUpdate), // 업데이트 작업
+            DeleteOneModel(deleteCondition) // 삭제 작업
+        )
     }
 
     private fun getYearMonthSequence(start: YearMonth, end: YearMonth): Sequence<YearMonth> {

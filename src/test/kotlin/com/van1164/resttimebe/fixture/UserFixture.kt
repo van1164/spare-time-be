@@ -15,5 +15,15 @@ class UserFixture {
                 groups = emptyList(),
             )
         }
+        fun createUser(name: String): User {
+            return User (
+                name = name,
+                userId = UUID.randomUUID().toString(),
+                email = "test@test.com",
+                displayName = "testDisplay",
+                friends = emptyList(),
+                groups = emptyList(),
+            )
+        }
     }
 }
