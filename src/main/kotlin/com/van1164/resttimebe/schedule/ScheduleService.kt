@@ -95,9 +95,10 @@ class ScheduleService(
         val originalRange = YearMonth.from(found.startTime)..YearMonth.from(found.endTime)
         val updatedRange = YearMonth.from(request.startTime)..YearMonth.from(request.endTime)
 
+        val originalClosedSequence = getYearMonthSequence(originalRange.start, originalRange.endInclusive)
         // 수정 이전 참여자의 document 삭제
         (found.participants - request.participants).forEach { participant ->
-            getYearMonthSequence(originalRange.start, originalRange.endInclusive).forEach { time ->
+            originalClosedSequence.forEach { time ->
                 removeOneTimeSchedules(participant, time, found).forEach { operation ->
                     operations.add(operation)
                 }
