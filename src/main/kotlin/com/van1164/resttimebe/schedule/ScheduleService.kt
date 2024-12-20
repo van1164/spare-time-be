@@ -46,8 +46,9 @@ class ScheduleService(
 
         if (request.repeatType == NONE) {
             val operations = mutableListOf<UpdateOneModel<Document>>()
+            val yearMonthSequence = getYearMonthSequence(YearMonth.from(request.startTime), YearMonth.from(request.endTime))
             request.participants.forEach { participant ->
-                getYearMonthSequence(YearMonth.from(request.startTime), YearMonth.from(request.endTime)).forEach { time ->
+                yearMonthSequence.forEach { time ->
                     operations.add(upsertOneTimeSchedules(participant, time, savedSchedule))
                 }
             }
@@ -64,12 +65,37 @@ class ScheduleService(
         val found = getById(scheduleId)
         val operations = mutableListOf<WriteModel<Document>>()
 
+        // 일반 스케쥴에서 반복 스케쥴로 변경하는 경우
+        if (found.repeatType == NONE && request.repeatType != NONE) {
+            val originalClosedTimes = getYearMonthSequence(YearMonth.from(found.startTime), YearMonth.from(found.endTime))
+            found.participants.forEach { participant ->
+               originalClosedTimes.forEach { time ->
+                    removeOneTimeSchedules(participant, time, found).forEach { operation ->
+                        operations.add(operation)
+                    }
+                }
+            }
+            if (operations.isNotEmpty()) {
+                mongoTemplate.db.getCollection("one_time_schedules")
+                    .bulkWrite(operations)
+            }
+            return scheduleRepository.save(
+                found.copy(
+                    category = request.category,
+                    startTime = request.startTime,
+                    endTime = request.endTime,
+                    repeatType = request.repeatType,
+                    participants = request.participants,
+                    status = request.status
+                )
+            )
+        }
+
         // 시간 범위 계산
         val originalRange = YearMonth.from(found.startTime)..YearMonth.from(found.endTime)
         val updatedRange = YearMonth.from(request.startTime)..YearMonth.from(request.endTime)
-        val toRemoveTimes = getYearMonthSequence(originalRange.start, originalRange.endInclusive).filter { it !in updatedRange }
-        val toAddTimes = getYearMonthSequence(updatedRange.start, updatedRange.endInclusive).filter { it !in originalRange }
 
+        // 수정 이전 참여자의 document 삭제
         (found.participants - request.participants).forEach { participant ->
             getYearMonthSequence(originalRange.start, originalRange.endInclusive).forEach { time ->
                 removeOneTimeSchedules(participant, time, found).forEach { operation ->
@@ -78,30 +104,27 @@ class ScheduleService(
             }
         }
 
+        // 수정 이후 참여자의 forEach 연산을 위한 Sequence<YearMonth> 사전 계산
+        val toAddTimes = getYearMonthSequence(updatedRange.start, updatedRange.endInclusive)
+            .filter { it !in originalRange }
+        val toRemoveTimes = getYearMonthSequence(originalRange.start, originalRange.endInclusive)
+            .filter { it !in updatedRange }
+        val updatedClosedTimes = generateSequence(updatedRange.start) { current ->
+            if (current < updatedRange.endInclusive) current.plusMonths(1) else null
+        }
+
+        // 수정 이후 참여자의 document 갱신
         request.participants.forEach { participant ->
             val participantInOriginal = participant in found.participants
-            // timesToAdd 초기화
-            val timesToAdd: Sequence<YearMonth> = if (participantInOriginal) {
-                toAddTimes
-            } else {
-                generateSequence(updatedRange.start) { current ->
-                    if (current < updatedRange.endInclusive) current.plusMonths(1) else null
-                }
-            }
 
-            // timesToRemove 초기화
-            val timesToRemove: Sequence<YearMonth> = if (participantInOriginal) {
-                toRemoveTimes
-            } else {
-                emptySequence<YearMonth>()
-            }
+            val timesToAdd = if (participantInOriginal) toAddTimes else updatedClosedTimes
+            val timesToRemove = if (participantInOriginal) toRemoveTimes else emptySequence()
 
             timesToRemove.forEach { time ->
                 removeOneTimeSchedules(participant, time, found).forEach { operation ->
                     operations.add(operation)
                 }
             }
-
             timesToAdd.forEach { time ->
                 operations.add(upsertOneTimeSchedules(participant, time, found))
             }

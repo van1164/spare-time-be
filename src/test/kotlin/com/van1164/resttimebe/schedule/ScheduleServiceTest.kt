@@ -2,7 +2,8 @@ package com.van1164.resttimebe.schedule
 
 import com.van1164.resttimebe.common.exception.ErrorCode.SCHEDULE_NOT_FOUND
 import com.van1164.resttimebe.common.exception.GlobalExceptions
-import com.van1164.resttimebe.domain.RepeatType.NONE
+import com.van1164.resttimebe.domain.RepeatType
+import com.van1164.resttimebe.domain.RepeatType.*
 import com.van1164.resttimebe.domain.ScheduleStatus
 import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
 import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
@@ -194,6 +195,45 @@ class ScheduleServiceTest @Autowired constructor(
         assertThat(updatedSchedule.repeatType).isEqualTo(schedule.repeatType)
         assertThat(updatedSchedule.participants).isEqualTo(schedule.participants)
         assertThat(updatedSchedule.status).isEqualTo(schedule.status)
+    }
+
+    @Test
+    fun `update should handle transition from regular schedule to repeat schedule`() {
+        // given
+        val user = userRepository.save(createUser("user"))
+        val createRequest = CreateScheduleRequest(
+            startTime = LocalDate.now().atStartOfDay(),
+            endTime = LocalDate.now().atStartOfDay().plusHours(3),
+            repeatType = NONE, // 기존에는 반복 일정이 아님
+            participants = setOf(user.userId),
+            status = ScheduleStatus.PENDING
+        )
+        val schedule = scheduleService.create(user.userId, createRequest)
+
+        val updateRequest = CreateScheduleRequest(
+            startTime = schedule.startTime,
+            endTime = schedule.endTime,
+            repeatType = DAILY, // 반복 일정으로 변경
+            participants = schedule.participants,
+            status = schedule.status
+        )
+
+        // when
+        val updatedSchedule = scheduleService.update(schedule.id!!, updateRequest)
+
+        // then
+        val oneTimeSchedules = oneTimeSchedulesRepository.findAll()
+
+        // 반복 일정으로 변경된 경우 기존 one-time 스케줄 삭제 확인
+        assertThat(oneTimeSchedules).isEmpty()
+
+        // 스케줄 업데이트 확인
+        assertThat(updatedSchedule.id).isEqualTo(schedule.id)
+        assertThat(updatedSchedule.repeatType).isEqualTo(DAILY)
+        assertThat(updatedSchedule.startTime).isEqualTo(updateRequest.startTime)
+        assertThat(updatedSchedule.endTime).isEqualTo(updateRequest.endTime)
+        assertThat(updatedSchedule.participants).isEqualTo(updateRequest.participants)
+        assertThat(updatedSchedule.status).isEqualTo(updateRequest.status)
     }
 
     @Test
