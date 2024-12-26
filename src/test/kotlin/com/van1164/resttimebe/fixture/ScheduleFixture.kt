@@ -8,6 +8,7 @@ import com.van1164.resttimebe.domain.ScheduleStatus
 import com.van1164.resttimebe.domain.User
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 class ScheduleFixture {
     companion object {
@@ -15,29 +16,20 @@ class ScheduleFixture {
             val userId = user.userId
             return Schedule (
                 userId = userId,
-                startTime = LocalDate.now().atStartOfDay(),
-                endTime = LocalDate.now().atStartOfDay().plusHours(1),
+                startDate = LocalDate.now(),
+                startTime = LocalDate.now().atStartOfDay().toLocalTime(),
+                endTime = LocalDate.now().atStartOfDay().plusHours(1).toLocalTime(),
                 repeatType = RepeatType.NONE,
                 participants = setOf(userId),
                 status = ScheduleStatus.CONFIRMED,
             )
         }
 
-        fun createSchedule(user: User, participants: Set<String> = setOf(user.userId)): Schedule {
-            return Schedule(
-                userId = user.userId,
-                startTime = LocalDate.now().atStartOfDay(),
-                endTime = LocalDate.now().plusMonths(3).atStartOfDay(),
-                repeatType = RepeatType.NONE,
-                participants = participants,
-                status = ScheduleStatus.PENDING
-            )
-        }
-
-        fun createSchedule(user: User, startTime: LocalDateTime, endTime: LocalDateTime): Schedule {
+        fun createSchedule(user: User, startTime: LocalTime, endTime: LocalTime): Schedule {
             val userId = user.userId
             return Schedule (
                 userId = userId,
+                startDate = LocalDate.now(),
                 startTime = startTime,
                 endTime = endTime,
                 repeatType = RepeatType.NONE,
