@@ -2,7 +2,8 @@ package com.van1164.resttimebe.domain
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import java.time.LocalDateTime
+import java.time.LocalDate
+import java.time.LocalTime
 
 @Document(collection = "schedules")
 data class Schedule(
@@ -10,8 +11,11 @@ data class Schedule(
     val id: String? = null,
     val userId: String,
     val categoryId: String? = null,
-    val startTime: LocalDateTime,
-    val endTime: LocalDateTime,
+    val startDate: LocalDate,
+    val endDate: LocalDate = startDate,
+    val isDaily: Boolean = startDate == endDate,
+    val startTime: LocalTime?,
+    val endTime: LocalTime?,
     val repeatType: RepeatType,
     val participants: Set<String>,
     val status: ScheduleStatus

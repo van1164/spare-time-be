@@ -6,12 +6,16 @@ import com.van1164.resttimebe.domain.RepeatType.*
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.domain.ScheduleStatus
 import com.van1164.resttimebe.domain.ScheduleStatus.*
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 data class CreateScheduleRequest(
     val categoryId: String? = null,
-    val startTime: LocalDateTime,
-    val endTime: LocalDateTime,
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+    val startTime: LocalTime?,
+    val endTime: LocalTime?,
     val repeatType: RepeatType = NONE,
     val participants: Set<String>,
     val status: ScheduleStatus = PENDING
@@ -20,6 +24,8 @@ data class CreateScheduleRequest(
         return Schedule(
             userId = userId,
             categoryId = categoryId,
+            startDate = startDate,
+            endDate = endDate,
             startTime = startTime,
             endTime = endTime,
             repeatType = repeatType,
