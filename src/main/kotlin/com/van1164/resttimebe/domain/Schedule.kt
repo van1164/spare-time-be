@@ -13,13 +13,14 @@ data class Schedule(
     val categoryId: String? = null,
     val startDate: LocalDate,
     val endDate: LocalDate? = startDate,
-    val isDaily: Boolean = startDate == endDate,
     val startTime: LocalTime?,
     val endTime: LocalTime?,
     val repeatType: RepeatType,
     val participants: Set<String>,
     val status: ScheduleStatus
-)
+) {
+    val isDaily: Boolean = startDate == endDate
+}
 
 enum class RepeatType {
     DAILY,    // 매일
