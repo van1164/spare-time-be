@@ -1,6 +1,9 @@
 package com.van1164.resttimebe.schedule
 
 import com.mongodb.client.model.*
+import com.van1164.resttimebe.common.exception.ErrorCode
+import com.van1164.resttimebe.common.exception.GlobalExceptions
+import com.van1164.resttimebe.common.exception.GlobalExceptions.*
 import com.van1164.resttimebe.domain.MultiDayParticipation
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
@@ -33,7 +36,9 @@ class ScheduleService(
     }
 
     fun getById(scheduleId: String): Schedule {
-
+        return scheduleRepository.findById(scheduleId).orElseThrow {
+            throw NotFoundException(ErrorCode.SCHEDULE_NOT_FOUND)
+        }
     }
 
     fun create(userId: String, request: CreateScheduleRequest): Schedule {
