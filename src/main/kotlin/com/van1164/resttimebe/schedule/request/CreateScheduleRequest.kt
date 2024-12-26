@@ -9,7 +9,7 @@ import com.van1164.resttimebe.domain.ScheduleStatus.*
 import java.time.LocalDateTime
 
 data class CreateScheduleRequest(
-    val category: Category? = null,
+    val categoryId: String? = null,
     val startTime: LocalDateTime,
     val endTime: LocalDateTime,
     val repeatType: RepeatType = NONE,
@@ -19,7 +19,7 @@ data class CreateScheduleRequest(
     fun toDomain(userId: String): Schedule {
         return Schedule(
             userId = userId,
-            category = category,
+            categoryId = categoryId,
             startTime = startTime,
             endTime = endTime,
             repeatType = repeatType,

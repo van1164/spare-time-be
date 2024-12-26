@@ -9,7 +9,7 @@ data class Schedule(
     @Id
     val id: String? = null,
     val userId: String,
-    val category: Category? = null,
+    val categoryId: String? = null,
     val startTime: LocalDateTime,
     val endTime: LocalDateTime,
     val repeatType: RepeatType,

@@ -81,7 +81,7 @@ class ScheduleService(
             }
             return scheduleRepository.save(
                 found.copy(
-                    category = request.category,
+                    categoryId = request.categoryId,
                     startTime = request.startTime,
                     endTime = request.endTime,
                     repeatType = request.repeatType,
@@ -138,7 +138,7 @@ class ScheduleService(
 
         return scheduleRepository.save(
             found.copy(
-                category = request.category,
+                categoryId = request.categoryId,
                 startTime = request.startTime,
                 endTime = request.endTime,
                 repeatType = request.repeatType,
