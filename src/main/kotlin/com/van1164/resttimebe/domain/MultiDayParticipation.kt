@@ -11,5 +11,5 @@ data class MultiDayParticipation (
     val userId: String,
     val scheduleId: String,
     val startDate: LocalDate,
-    val endDate: LocalDate
+    val endDate: LocalDate?
 )

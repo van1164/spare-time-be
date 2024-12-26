@@ -12,7 +12,7 @@ data class Schedule(
     val userId: String,
     val categoryId: String? = null,
     val startDate: LocalDate,
-    val endDate: LocalDate = startDate,
+    val endDate: LocalDate? = startDate,
     val isDaily: Boolean = startDate == endDate,
     val startTime: LocalTime?,
     val endTime: LocalTime?,
