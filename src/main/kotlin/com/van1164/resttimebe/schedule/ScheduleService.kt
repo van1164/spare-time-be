@@ -1,8 +1,10 @@
 package com.van1164.resttimebe.schedule
 
 import com.mongodb.client.model.*
+import com.van1164.resttimebe.domain.MultiDayParticipation
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
+import com.van1164.resttimebe.schedule.repository.MultiDayParticipationRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
 import org.bson.Document
@@ -19,6 +21,7 @@ import java.time.YearMonth
 class ScheduleService(
     private val scheduleRepository: ScheduleRepository,
     private val dailySchedulesRepository: DailySchedulesRepository,
+    private val multiDayParticipationRepository: MultiDayParticipationRepository,
     private val mongoTemplate: MongoTemplate
 ) {
     fun getSchedules(
@@ -39,6 +42,14 @@ class ScheduleService(
         if (saved.isDaily) {
             dailySchedulesRepository.upsertOne(userId, saved.startDate, saved.id!!)
         } else {
+            multiDayParticipationRepository.save(
+                MultiDayParticipation(
+                    userId = userId,
+                    scheduleId = saved.id!!,
+                    startDate = saved.startDate,
+                    endDate = saved.endDate
+                )
+            )
         }
 
         return saved
