@@ -1,6 +1,6 @@
 package com.van1164.resttimebe.schedule
 
-import com.van1164.resttimebe.schedule.repository.OneTimeSchedulesRepository
+import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.user.repository.UserRepository
 import org.junit.jupiter.api.BeforeEach
@@ -16,13 +16,13 @@ import java.util.stream.Stream
 @SpringBootTest
 class ScheduleServiceTest @Autowired constructor(
     private val scheduleService: ScheduleService,
-    private val oneTimeSchedulesRepository: OneTimeSchedulesRepository,
+    private val dailySchedulesRepository: DailySchedulesRepository,
     private val scheduleRepository: ScheduleRepository,
     private val userRepository: UserRepository
 ) {
     @BeforeEach
     fun setUp() {
-        oneTimeSchedulesRepository.deleteAll()
+        dailySchedulesRepository.deleteAll()
         scheduleRepository.deleteAll()
         userRepository.deleteAll()
     }

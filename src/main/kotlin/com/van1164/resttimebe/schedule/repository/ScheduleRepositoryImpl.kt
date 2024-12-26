@@ -1,22 +1,23 @@
 package com.van1164.resttimebe.schedule.repository
 
-import com.van1164.resttimebe.domain.OneTimeSchedules
+import com.van1164.resttimebe.domain.DailySchedules
 import com.van1164.resttimebe.domain.RepeatType
 import com.van1164.resttimebe.domain.Schedule
 import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Repository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Repository
 class ScheduleRepositoryImpl(
     val mongoTemplate: MongoTemplate
 ) : ScheduleRepositoryCustom {
-    override fun getOneTimeScheduleList(
+    override fun getDailyScheduleList(
         userId: String,
-        rangeStart: LocalDateTime,
-        rangeEnd: LocalDateTime
+        rangeStart: LocalDate,
+        rangeEnd: LocalDate
     ): Set<String> {
         return mongoTemplate.find(
             Query().addCriteria(
@@ -50,7 +51,7 @@ class ScheduleRepositoryImpl(
                     )
                 )
             ),
-            OneTimeSchedules::class.java
+            DailySchedules::class.java
         )
             .flatMap { it.schedules }
             .toSet()
@@ -58,8 +59,8 @@ class ScheduleRepositoryImpl(
 
     override fun getRecurringSchedules(
         userId: String,
-        rangeStart: LocalDateTime,
-        rangeEnd: LocalDateTime
+        rangeStart: LocalDate,
+        rangeEnd: LocalDate
     ): Set<Schedule> {
         return mongoTemplate.find(
             Query().addCriteria(
