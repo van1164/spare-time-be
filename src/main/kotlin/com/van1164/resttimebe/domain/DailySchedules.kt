@@ -3,7 +3,7 @@ package com.van1164.resttimebe.domain
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 
-@Document(collection = "one_time_schedules")
+@Document(collection = "daily_schedules")
 data class DailySchedules (
     @Id
     val id: String? = null,
