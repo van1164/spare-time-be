@@ -40,6 +40,11 @@ class ScheduleService(
         val schedules = scheduleRepository.findAllById(scheduleIds)
         val recurringSchedules = scheduleRepository.getRecurringSchedules(userId, year, month)
 
+        return ScheduleReadResponse(
+            dailySchedules = schedules.filter { it.isDaily }.toSet(),
+            multiDaySchedules = schedules.filter { !it.isDaily }.toSet(),
+            recurringSchedules = recurringSchedules
+        )
     }
 
     fun getById(scheduleId: String): Schedule {
