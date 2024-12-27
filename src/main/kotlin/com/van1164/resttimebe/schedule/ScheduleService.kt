@@ -10,6 +10,8 @@ import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
 import com.van1164.resttimebe.schedule.repository.MultiDayRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
+import com.van1164.resttimebe.schedule.response.ScheduleCreateResponse
+import com.van1164.resttimebe.schedule.response.ScheduleCreateResponse.*
 import com.van1164.resttimebe.schedule.response.ScheduleReadResponse
 import org.bson.Document
 import org.bson.conversions.Bson
@@ -53,37 +55,76 @@ class ScheduleService(
         }
     }
 
-    //TODO: 모든 부작용을 검증할 수 있도록 반환 객체 추가가 필요함
-    fun create(userId: String, request: CreateScheduleRequest): Schedule {
+    fun create(userId: String, request: CreateScheduleRequest): ScheduleCreateResponse {
         val saved = scheduleRepository.save(request.toDomain(userId))
 
-        if (saved.repeatType == NONE) {
-            if (saved.isDaily) {
-                dailySchedulesRepository.upsertOne(userId, saved.startDate, saved.id!!)
+        return when {
+            saved.isDailySchedule() ->
+                DailyScheduleResult(
+                    dailyScheduleUpdateResult = dailySchedulesRepository.upsertOne(userId, saved.startDate, saved.id!!),
+                    schedule = saved
+                )
+
+            saved.isMultiDaySchedule() ->
+                MultiDayScheduleResult(
+                    multiDayParticipation = multiDayRepository.save(
+                        MultiDayParticipation(
+                            userId = userId,
+                            scheduleId = saved.id!!,
+                            startDate = saved.startDate,
+                            endDate = saved.endDate
+                        )
+                    ),
+                    schedule = saved
+                )
+
+            else ->
+                RecurringScheduleResult(schedule = saved)
+        }
+    }
+
+    fun update(scheduleId: String, request: CreateScheduleRequest): Schedule {
+        val found = getById(scheduleId)
+
+        if (found.repeatType == NONE) {
+            if (found.isDaily) {
+                val dailyScheduleResult = dailySchedulesRepository.upsertOne(found.userId, found.startDate, scheduleId)
             } else {
-                multiDayRepository.save(
+                val multiDayResult = multiDayRepository.save(
                     MultiDayParticipation(
-                        userId = userId,
-                        scheduleId = saved.id!!,
-                        startDate = saved.startDate,
-                        endDate = saved.endDate
+                        userId = found.userId,
+                        scheduleId = scheduleId,
+                        startDate = request.startDate,
+                        endDate = request.endDate
                     )
                 )
             }
         }
 
-        return saved
-    }
-
-    fun update(scheduleId: String, request: CreateScheduleRequest): Schedule {
-
+        val updated = scheduleRepository.save(
+            found.copy(
+                categoryId = request.categoryId,
+                startDate = request.startDate,
+                endDate = request.endDate,
+                startTime = request.startTime,
+                endTime = request.endTime,
+                repeatType = request.repeatType,
+                participants = request.participants,
+                status = request.status
+            )
+        )
+        TODO("To be implemented")
     }
 
     fun delete(scheduleId: String) {
 
     }
 
-    private fun removeDailySchedules(userId: String, startDate: LocalDate, schedule: Schedule): List<WriteModel<Document>> {
+    private fun removeDailySchedules(
+        userId: String,
+        startDate: LocalDate,
+        schedule: Schedule
+    ): List<WriteModel<Document>> {
         val filter: Bson = Filters.and(
             Filters.eq("userId", userId),
             Filters.eq("partitionYear", startDate.year),
@@ -96,4 +137,7 @@ class ScheduleService(
             DeleteOneModel(deleteCondition) // 삭제 작업
         )
     }
+
+    private fun Schedule.isDailySchedule(): Boolean = this.repeatType == NONE && this.isDaily
+    private fun Schedule.isMultiDaySchedule(): Boolean = this.repeatType == NONE && !this.isDaily
 }

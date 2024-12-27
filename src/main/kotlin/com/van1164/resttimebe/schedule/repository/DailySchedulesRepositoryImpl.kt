@@ -3,6 +3,7 @@ package com.van1164.resttimebe.schedule.repository
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.UpdateOptions
 import com.mongodb.client.model.Updates
+import com.mongodb.client.result.UpdateResult
 import com.van1164.resttimebe.domain.DailySchedules
 import org.bson.conversions.Bson
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -15,7 +16,7 @@ import java.time.Year
 class DailySchedulesRepositoryImpl(
     private val mongoTemplate: MongoTemplate
 ) : DailySchedulesRepositoryCustom {
-    override fun upsertOne(userId: String, startDate: LocalDate, scheduleId: String) {
+    override fun upsertOne(userId: String, startDate: LocalDate, scheduleId: String): UpdateResult {
         val filter = Filters.and(
             Filters.eq("userId", userId),
             Filters.eq("partitionYear", startDate.year),
@@ -29,7 +30,7 @@ class DailySchedulesRepositoryImpl(
         )
         val options = UpdateOptions().upsert(true)
 
-        updateOne(filter, update, options)
+        return updateOne(filter, update, options)
     }
 
     override fun getDailyScheduleIds(userId: String, year: Year, month: Month): Set<String> {
@@ -48,7 +49,7 @@ class DailySchedulesRepositoryImpl(
             ?: emptySet()
     }
 
-    private fun updateOne(filter: Bson, update: Bson, options: UpdateOptions) {
-        mongoTemplate.getCollection("daily_schedules").updateOne(filter, update, options)
+    private fun updateOne(filter: Bson, update: Bson, options: UpdateOptions): UpdateResult {
+        return mongoTemplate.getCollection("daily_schedules").updateOne(filter, update, options)
     }
 }
