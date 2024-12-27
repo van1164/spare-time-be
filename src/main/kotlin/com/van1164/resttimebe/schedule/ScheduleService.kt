@@ -33,12 +33,13 @@ class ScheduleService(
         year: Year,
         month: Month
     ): ScheduleReadResponse {
-        // DailySchedules 에서 해당 범위에 해당하는 스케줄 ID를 가져옴
-        // multiDayParticipation 에서 해당 범위에 해당하는 스케줄 ID를 가져옴
-        // 합치지 않고, 두 번의 쿼리를 함.
-        // 스케쥴 리스트를 repeatType 에 따라 별개의 리스트로 반환
         val dailyScheduleIds = dailySchedulesRepository.getDailyScheduleIds(userId, year, month)
         val multiDayScheduleIds = multiDayRepository.getMultiDayScheduleIds(userId, year, month)
+        val scheduleIds = dailyScheduleIds + multiDayScheduleIds
+
+        val schedules = scheduleRepository.findAllById(scheduleIds)
+        val recurringSchedules = scheduleRepository.getRecurringSchedules(userId, year, month)
+
     }
 
     fun getById(scheduleId: String): Schedule {

@@ -10,33 +10,32 @@ import java.time.Year
 
 class MultiDayRepositoryImpl(
     private val mongoTemplate: MongoTemplate
-): MultiDayRepositoryCustom {
+) : MultiDayRepositoryCustom {
     override fun getMultiDayScheduleIds(userId: String, year: Year, month: Month): Set<String> {
         val yearMonthStart: Date = Date.valueOf(year.atMonth(month).atDay(1))
         val yearMonthEnd: Date = Date.valueOf(year.atMonth(month).atEndOfMonth())
 
-        return mongoTemplate.find(
-            Query().addCriteria(
-                Criteria().orOperator(
-                    Criteria().andOperator(
-                        Criteria.where("userId").`is`(userId),
-                        Criteria.where("startDate").gte(yearMonthStart),
-                        Criteria.where("startDate").lte(yearMonthEnd)
-                    ),
-                    Criteria().andOperator(
-                        Criteria.where("userId").`is`(userId),
-                        Criteria.where("startDate").lt(yearMonthStart),
-                        Criteria.where("endDate").lte(yearMonthEnd)
-                    ),
-                    Criteria().andOperator(
-                        Criteria.where("userId").`is`(userId),
-                        Criteria.where("startDate").lte(yearMonthEnd),
-                        Criteria.where("endDate").gt(yearMonthEnd),
-                    )
+        val query = Query().addCriteria(
+            Criteria().orOperator(
+                Criteria().andOperator(
+                    Criteria.where("userId").`is`(userId),
+                    Criteria.where("startDate").gte(yearMonthStart),
+                    Criteria.where("startDate").lte(yearMonthEnd)
+                ),
+                Criteria().andOperator(
+                    Criteria.where("userId").`is`(userId),
+                    Criteria.where("startDate").lt(yearMonthStart),
+                    Criteria.where("endDate").lte(yearMonthEnd)
+                ),
+                Criteria().andOperator(
+                    Criteria.where("userId").`is`(userId),
+                    Criteria.where("startDate").lte(yearMonthEnd),
+                    Criteria.where("endDate").gt(yearMonthEnd),
                 )
-            ),
-            MultiDayParticipation::class.java
+            )
         )
+
+        return mongoTemplate.find(query, MultiDayParticipation::class.java)
             .map { it.scheduleId }
             .toSet()
     }
