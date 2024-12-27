@@ -113,7 +113,9 @@ class ScheduleService(
     }
 
     fun delete(scheduleId: String) {
-
+        val found = getById(scheduleId)
+        removeParticipantsFromSchedule(found)
+        scheduleRepository.deleteById(scheduleId)
     }
 
     private fun removeParticipantsFromSchedule(schedule: Schedule, participants: Set<String> = schedule.participants) {
