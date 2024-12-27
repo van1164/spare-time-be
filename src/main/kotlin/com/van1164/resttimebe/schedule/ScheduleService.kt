@@ -2,14 +2,12 @@ package com.van1164.resttimebe.schedule
 
 import com.mongodb.client.model.*
 import com.van1164.resttimebe.common.exception.ErrorCode
-import com.van1164.resttimebe.common.exception.GlobalExceptions
 import com.van1164.resttimebe.common.exception.GlobalExceptions.*
 import com.van1164.resttimebe.domain.MultiDayParticipation
-import com.van1164.resttimebe.domain.RepeatType
 import com.van1164.resttimebe.domain.RepeatType.*
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
-import com.van1164.resttimebe.schedule.repository.MultiDayParticipationRepository
+import com.van1164.resttimebe.schedule.repository.MultiDayRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
 import com.van1164.resttimebe.schedule.response.ScheduleReadResponse
@@ -19,27 +17,28 @@ import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.YearMonth
+import java.time.Month
+import java.time.Year
 
 @Service
 @Transactional
 class ScheduleService(
     private val scheduleRepository: ScheduleRepository,
     private val dailySchedulesRepository: DailySchedulesRepository,
-    private val multiDayParticipationRepository: MultiDayParticipationRepository,
+    private val multiDayRepository: MultiDayRepository,
     private val mongoTemplate: MongoTemplate
 ) {
     fun getSchedules(
         userId: String,
-        rangeStart: LocalDate,
-        rangeEnd: LocalDate
+        year: Year,
+        month: Month
     ): ScheduleReadResponse {
         // DailySchedules 에서 해당 범위에 해당하는 스케줄 ID를 가져옴
         // multiDayParticipation 에서 해당 범위에 해당하는 스케줄 ID를 가져옴
         // 합치지 않고, 두 번의 쿼리를 함.
         // 스케쥴 리스트를 repeatType 에 따라 별개의 리스트로 반환
-        val dailySchedules = dailySchedulesRepository.getDailyScheduleList(userId, rangeStart, rangeEnd)
+        val dailyScheduleIds = dailySchedulesRepository.getDailyScheduleIds(userId, year, month)
+        val multiDayScheduleIds = multiDayRepository.getMultiDayScheduleIds(userId, year, month)
     }
 
     fun getById(scheduleId: String): Schedule {
@@ -56,7 +55,7 @@ class ScheduleService(
             if (saved.isDaily) {
                 dailySchedulesRepository.upsertOne(userId, saved.startDate, saved.id!!)
             } else {
-                multiDayParticipationRepository.save(
+                multiDayRepository.save(
                     MultiDayParticipation(
                         userId = userId,
                         scheduleId = saved.id!!,

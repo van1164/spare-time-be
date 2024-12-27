@@ -3,9 +3,14 @@ package com.van1164.resttimebe.schedule.repository
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.UpdateOptions
 import com.mongodb.client.model.Updates
+import com.van1164.resttimebe.domain.DailySchedules
 import org.bson.conversions.Bson
 import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.data.mongodb.core.query.Query
 import java.time.LocalDate
+import java.time.Month
+import java.time.Year
 
 class DailySchedulesRepositoryImpl(
     private val mongoTemplate: MongoTemplate
@@ -25,6 +30,22 @@ class DailySchedulesRepositoryImpl(
         val options = UpdateOptions().upsert(true)
 
         updateOne(filter, update, options)
+    }
+
+    override fun getDailyScheduleIds(userId: String, year: Year, month: Month): Set<String> {
+        return mongoTemplate.find(
+            Query().addCriteria(
+                Criteria().andOperator(
+                    Criteria.where("userId").`is`(userId),
+                    Criteria.where("partitionYear").`is`(year.value),
+                    Criteria.where("partitionMonth").`is`(month.value)
+                )
+            ),
+            DailySchedules::class.java
+        )
+            .firstOrNull()
+            ?.schedules
+            ?: emptySet()
     }
 
     private fun updateOne(filter: Bson, update: Bson, options: UpdateOptions) {
