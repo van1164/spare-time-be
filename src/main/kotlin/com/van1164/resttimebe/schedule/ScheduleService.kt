@@ -10,9 +10,11 @@ import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
 import com.van1164.resttimebe.schedule.repository.MultiDayRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
+import com.van1164.resttimebe.schedule.request.UpdateScheduleRequest
 import com.van1164.resttimebe.schedule.response.ScheduleCreateResponse
 import com.van1164.resttimebe.schedule.response.ScheduleCreateResponse.*
 import com.van1164.resttimebe.schedule.response.ScheduleReadResponse
+import com.van1164.resttimebe.schedule.response.ScheduleUpdateResponse
 import org.bson.Document
 import org.bson.conversions.Bson
 import org.springframework.data.mongodb.core.MongoTemplate
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.Month
 import java.time.Year
+import java.time.YearMonth
 
 @Service
 @Transactional
@@ -58,15 +61,15 @@ class ScheduleService(
     fun create(userId: String, request: CreateScheduleRequest): ScheduleCreateResponse {
         val saved = scheduleRepository.save(request.toDomain(userId))
 
-        return when {
+        when {
             saved.isDailySchedule() ->
-                DailyScheduleResult(
+                return DailyScheduleResponse(
                     dailyScheduleUpdateResult = dailySchedulesRepository.upsertOne(userId, saved.startDate, saved.id!!),
                     schedule = saved
                 )
 
             saved.isMultiDaySchedule() ->
-                MultiDayScheduleResult(
+                return MultiDayScheduleResponse(
                     multiDayParticipation = multiDayRepository.save(
                         MultiDayParticipation(
                             userId = userId,
@@ -79,48 +82,129 @@ class ScheduleService(
                 )
 
             else ->
-                RecurringScheduleResult(schedule = saved)
+                return RecurringScheduleResponse(schedule = saved)
         }
     }
 
-    fun update(scheduleId: String, request: CreateScheduleRequest): Schedule {
+    //TODO: 반환 객체 점검
+    fun update(scheduleId: String, request: UpdateScheduleRequest): ScheduleUpdateResponse {
         val found = getById(scheduleId)
 
-        if (found.repeatType == NONE) {
-            if (found.isDaily) {
-                val dailyScheduleResult = dailySchedulesRepository.upsertOne(found.userId, found.startDate, scheduleId)
-            } else {
-                val multiDayResult = multiDayRepository.save(
-                    MultiDayParticipation(
-                        userId = found.userId,
-                        scheduleId = scheduleId,
-                        startDate = request.startDate,
-                        endDate = request.endDate
-                    )
-                )
-            }
+        if (found.repeatType == NONE && request.repeatType != NONE) {
+            removeParticipantsFromSchedule(found)
+            return ScheduleUpdateResponse(
+                scheduleRepository.save(request.toDomain(scheduleId))
+            )
         }
 
-        val updated = scheduleRepository.save(
-            found.copy(
-                categoryId = request.categoryId,
-                startDate = request.startDate,
-                endDate = request.endDate,
-                startTime = request.startTime,
-                endTime = request.endTime,
-                repeatType = request.repeatType,
-                participants = request.participants,
-                status = request.status
-            )
+        val removedParticipants = found.participants - request.participants
+        if (removedParticipants.isNotEmpty()) {
+            removeParticipantsFromSchedule(found, removedParticipants)
+        }
+
+        val updatedParticipants = request.participants - found.participants
+        if (updatedParticipants.isNotEmpty()) {
+            upsertParticipantsToSchedule(found, request, updatedParticipants)
+        }
+
+        return ScheduleUpdateResponse(
+            scheduleRepository.save(request.toDomain(scheduleId))
         )
-        TODO("To be implemented")
     }
 
     fun delete(scheduleId: String) {
 
     }
 
-    private fun removeDailySchedules(
+    private fun removeParticipantsFromSchedule(schedule: Schedule, participants: Set<String> = schedule.participants) {
+        val operations = mutableListOf<WriteModel<Document>>()
+
+        when {
+            schedule.isDailySchedule() -> {
+                participants.forEach { participant ->
+                    operations.addAll(prepareDailyScheduleRemoval(participant, schedule.startDate, schedule))
+                }
+                executeBulkWrite("daily_schedules", operations)
+            }
+
+            schedule.isMultiDaySchedule() -> {
+                participants.forEach { participant ->
+                    operations.add(prepareMultiDayParticipationRemoval(participant, schedule))
+                }
+                executeBulkWrite("multi_day_participation", operations)
+            }
+        }
+    }
+
+    private fun upsertParticipantsToSchedule(schedule: Schedule, request: UpdateScheduleRequest, participants: Set<String>) {
+        val operations = mutableListOf<WriteModel<Document>>()
+
+        when {
+            schedule.isDailySchedule() -> {
+                val isYearMonthUpdated = isYearMonthUpdated(schedule, request)
+                participants.forEach { participant ->
+                    if (isYearMonthUpdated) {
+                        operations.addAll(prepareDailyScheduleRemoval(participant, schedule.startDate, schedule))
+                    }
+                    operations.add(prepareDailyScheduleUpsert(participant, schedule.startDate, schedule))
+                }
+                executeBulkWrite("daily_schedules", operations)
+            }
+
+            schedule.isMultiDaySchedule() -> {
+                participants.forEach { participant ->
+                    operations.add(prepareMultiDayParticipationUpsert(participant, schedule))
+                }
+                executeBulkWrite("multi_day_participation", operations)
+            }
+        }
+    }
+
+    private fun executeBulkWrite(collectionName: String, operations: List<WriteModel<Document>>) {
+        if (operations.isNotEmpty()) {
+            mongoTemplate.getCollection(collectionName).bulkWrite(operations)
+        }
+    }
+
+    private fun prepareDailyScheduleUpsert(
+        userId: String,
+        startDate: LocalDate,
+        schedule: Schedule
+    ): WriteModel<Document> {
+        val filter: Bson = Filters.and(
+            Filters.eq("userId", userId),
+            Filters.eq("partitionYear", startDate.year),
+            Filters.eq("partitionMonth", startDate.monthValue)
+        )
+        val update: Bson = Updates.combine(
+            Updates.setOnInsert("userId", userId),
+            Updates.setOnInsert("partitionYear", startDate.year),
+            Updates.setOnInsert("partitionMonth", startDate.monthValue),
+            Updates.addToSet("schedules", schedule.id)
+        )
+        val options: UpdateOptions = UpdateOptions().upsert(true)
+        return UpdateOneModel(filter, update, options)
+    }
+
+    private fun prepareMultiDayParticipationUpsert(
+        userId: String,
+        schedule: Schedule
+    ): WriteModel<Document> {
+        val filter = Filters.and(
+            Filters.eq("userId", userId),
+            Filters.eq("scheduleId", schedule.id)
+        )
+        val update = Updates.combine(
+            Updates.setOnInsert("userId", userId),
+            Updates.setOnInsert("scheduleId", schedule.id),
+            Updates.setOnInsert("startDate", schedule.startDate),
+            Updates.setOnInsert("endDate", schedule.endDate)
+        )
+        val options = UpdateOptions().upsert(true)
+        return UpdateOneModel(filter, update, options)
+    }
+
+    private fun prepareDailyScheduleRemoval(
         userId: String,
         startDate: LocalDate,
         schedule: Schedule
@@ -138,6 +222,23 @@ class ScheduleService(
         )
     }
 
+    private fun prepareMultiDayParticipationRemoval(
+        userId: String,
+        schedule: Schedule
+    ): WriteModel<Document> {
+
+        val filter: Bson = Filters.and(
+            Filters.eq("userId", userId),
+            Filters.eq("scheduleId", schedule.id),
+        )
+        return DeleteOneModel(filter)
+    }
+
     private fun Schedule.isDailySchedule(): Boolean = this.repeatType == NONE && this.isDaily
     private fun Schedule.isMultiDaySchedule(): Boolean = this.repeatType == NONE && !this.isDaily
+    private fun isYearMonthUpdated(old: Schedule, new: UpdateScheduleRequest): Boolean {
+        val oldYearMonth = YearMonth.of(old.startDate.year, old.startDate.month)
+        val newYearMonth = YearMonth.of(new.startDate.year, new.startDate.month)
+        return oldYearMonth != newYearMonth
+    }
 }

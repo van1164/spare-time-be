@@ -5,21 +5,21 @@ import com.van1164.resttimebe.domain.MultiDayParticipation
 import com.van1164.resttimebe.domain.Schedule
 
 sealed class ScheduleCreateResponse {
-    data class DailyScheduleResult(
+    data class DailyScheduleResponse(
         val dailyScheduleUpdateResult: UpdateResult,
         val schedule: Schedule
     ) : ScheduleCreateResponse() {
         val multiDayParticipation: MultiDayParticipation? = null
     }
 
-    data class MultiDayScheduleResult(
+    data class MultiDayScheduleResponse(
         val multiDayParticipation: MultiDayParticipation,
         val schedule: Schedule
     ) : ScheduleCreateResponse() {
         val dailyScheduleResult: UpdateResult? = null
     }
 
-    data class RecurringScheduleResult(
+    data class RecurringScheduleResponse(
         val schedule: Schedule
     ) : ScheduleCreateResponse() {
         val dailyScheduleResult: UpdateResult? = null
