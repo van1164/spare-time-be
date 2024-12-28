@@ -102,10 +102,7 @@ class ScheduleService(
             removeParticipantsFromSchedule(found, removedParticipants)
         }
 
-        val updatedParticipants = request.participants - found.participants
-        if (updatedParticipants.isNotEmpty()) {
-            upsertParticipantsToSchedule(found, request, updatedParticipants)
-        }
+        upsertParticipantsToSchedule(found, request, request.participants)
 
         return ScheduleUpdateResponse(
             scheduleRepository.save(request.toDomain(scheduleId))
