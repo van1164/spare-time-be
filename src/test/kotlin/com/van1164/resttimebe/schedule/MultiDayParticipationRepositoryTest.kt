@@ -32,7 +32,7 @@ class MultiDayRepositoryImplTest @Autowired constructor(
             createMultiDayParticipation("schedule2", dbUserId, "2024-02-10", "2024-02-15"),
             createMultiDayParticipation("schedule3", dbUserId, "2024-01-01", "2024-01-02")
         )
-        participation.forEach { multiDayRepository.save(it) }
+        multiDayRepository.saveAll(participation)
 
         val result = multiDayRepository.getMultiDayScheduleIds(userId, year, month)
 
