@@ -4,25 +4,28 @@ import com.mongodb.client.result.UpdateResult
 import com.van1164.resttimebe.domain.MultiDayParticipation
 import com.van1164.resttimebe.domain.Schedule
 
-sealed class ScheduleCreateResponse {
-    data class DailyScheduleResponse(
-        val dailyScheduleUpdateResult: UpdateResult,
-        val schedule: Schedule
-    ) : ScheduleCreateResponse() {
-        val multiDayParticipation: MultiDayParticipation? = null
-    }
+sealed class ScheduleCreateResponse(
+    val schedule: Schedule,
+    val dailyScheduleUpdateResult: UpdateResult? = null,
+    val multiDayParticipation: MultiDayParticipation? = null
+) {
+    class DailyScheduleResponse(
+        schedule: Schedule,
+        dailyScheduleUpdateResult: UpdateResult
+    ) : ScheduleCreateResponse(
+        schedule = schedule,
+        dailyScheduleUpdateResult = dailyScheduleUpdateResult
+    )
 
-    data class MultiDayScheduleResponse(
-        val multiDayParticipation: MultiDayParticipation,
-        val schedule: Schedule
-    ) : ScheduleCreateResponse() {
-        val dailyScheduleResult: UpdateResult? = null
-    }
+    class MultiDayScheduleResponse(
+        schedule: Schedule,
+        multiDayParticipation: MultiDayParticipation
+    ) : ScheduleCreateResponse(
+        schedule = schedule,
+        multiDayParticipation = multiDayParticipation
+    )
 
-    data class RecurringScheduleResponse(
-        val schedule: Schedule
-    ) : ScheduleCreateResponse() {
-        val dailyScheduleResult: UpdateResult? = null
-        val multiDayParticipation: MultiDayParticipation? = null
-    }
+    class RecurringScheduleResponse(
+        schedule: Schedule
+    ) : ScheduleCreateResponse(schedule)
 }

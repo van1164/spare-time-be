@@ -13,9 +13,9 @@ import java.time.LocalTime
 data class CreateScheduleRequest(
     val categoryId: String? = null,
     val startDate: LocalDate,
-    val endDate: LocalDate,
-    val startTime: LocalTime?,
-    val endTime: LocalTime?,
+    val endDate: LocalDate? = startDate,
+    val startTime: LocalTime? = null,
+    val endTime: LocalTime? = null,
     val repeatType: RepeatType = NONE,
     val participants: Set<String>,
     val status: ScheduleStatus = PENDING

@@ -1,203 +1,113 @@
 package com.van1164.resttimebe.schedule
 
+import com.van1164.resttimebe.domain.RepeatType
+import com.van1164.resttimebe.domain.RepeatType.DAILY
+import com.van1164.resttimebe.domain.RepeatType.NONE
+import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
 import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
+import com.van1164.resttimebe.schedule.repository.MultiDayRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
-import com.van1164.resttimebe.user.repository.UserRepository
+import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import java.time.LocalDateTime
-import java.util.stream.Stream
+import java.time.LocalDate
+import java.time.Month
+import java.time.Month.JANUARY
+import java.time.Year
 
 @SpringBootTest
 class ScheduleServiceTest @Autowired constructor(
     private val scheduleService: ScheduleService,
-    private val dailySchedulesRepository: DailySchedulesRepository,
     private val scheduleRepository: ScheduleRepository,
-    private val userRepository: UserRepository
+    private val dailySchedulesRepository: DailySchedulesRepository,
+    private val multiDayRepository: MultiDayRepository
 ) {
+
     @BeforeEach
     fun setUp() {
         dailySchedulesRepository.deleteAll()
+        multiDayRepository.deleteAll()
         scheduleRepository.deleteAll()
-        userRepository.deleteAll()
     }
 
-    @ParameterizedTest
-    @MethodSource("provideSchedulesAndDateRanges")
-    fun `getSchedules should check if schedule is within date range`(
-        testName: String,
-        scheduleStartTime: LocalDateTime,
-        scheduleEndTime: LocalDateTime,
-        rangeStart: LocalDateTime,
-        rangeEnd: LocalDateTime,
-        hasOverlap: Boolean
+    @Test
+    fun `getSchedules retrieves daily, multi-day, and recurring schedules for the user`() {
+        val dbUserId = "testUser"
+        val (userId, year, month) = SearchCondition(dbUserId, 2024, JANUARY)
+        val (dailySchedule, multiDaySchedule, recurringSchedule) = listOf(
+            createScheduleRequest(dbUserId, "2024-01-20", "2024-01-20", NONE),
+            createScheduleRequest(dbUserId, "2024-01-10", "2024-01-13", NONE),
+            createScheduleRequest(dbUserId, "2024-01-05", "2024-01-05", DAILY),
+        )
+            .map { scheduleService.create(dbUserId, it).schedule }
+
+        val response = scheduleService.getSchedules(userId, year, month)
+
+        assertEquals(setOf(dailySchedule), response.dailySchedules)
+        assertEquals(setOf(multiDaySchedule), response.multiDaySchedules)
+        assertEquals(setOf(recurringSchedule), response.recurringSchedules)
+    }
+
+    @Test
+    fun `getById retrieves the correct schedule`() {
+        val saved = scheduleRepository.save(createSchedule("testUser", "2024-01-15"))
+
+        val result = scheduleService.getById(saved.id!!)
+
+        assertEquals(saved, result)
+    }
+
+    @Test
+    fun `create adds a daily schedule and updates dailySchedulesRepository`() {
+        val userId = "testUser"
+        val request = createScheduleRequest(userId, "2024-01-15")
+
+        val response = scheduleService.create(userId, request)
+
+        val savedSchedule = scheduleService.getById(response.schedule.id!!)
+        assertNotNull(savedSchedule)
+        assertTrue(
+            dailySchedulesRepository.getDailyScheduleIds(userId, Year.of(2024), JANUARY)
+                .contains(savedSchedule.id)
+        )
+    }
+
+    @Test
+    fun `delete removes the schedule and associated participants`() {
+        val userId = "testUser"
+        val schedule =
+            scheduleService.create(userId, createScheduleRequest(userId, "2024-01-15")).schedule
+
+        scheduleService.delete(schedule.id!!)
+
+        assertFalse(scheduleRepository.existsById(schedule.id!!))
+        assertTrue(
+            dailySchedulesRepository.getDailyScheduleIds(userId, Year.of(2024), JANUARY).isEmpty()
+        )
+    }
+
+    private data class SearchCondition(
+        val userId: String,
+        val year: Year,
+        val month: Month
     ) {
-
+        constructor(userId: String, year: Int, month: Month) : this(userId, Year.of(year), month)
     }
 
-
-    @Test
-    fun `getById should return schedule successfully`() {
-
-    }
-
-    @Test
-    fun `getById should throw exception when schedule not found`() {
-
-    }
-
-    @Test
-    fun `create should create schedule successfully`() {
-
-    }
-
-    @Test
-    fun `upsertOneTimeSchedules should save inverted index in collection`() {
-
-    }
-
-    @Test
-    fun `upsertOneTimeSchedules should save inverted index via bulk write`() {
-
-    }
-
-    @Test
-    fun `update should update schedule successfully`() {
-
-    }
-
-    @Test
-    fun `update should handle transition from regular schedule to repeat schedule`() {
-
-    }
-
-    @Test
-    fun `update should add new participants and their schedules`() {
-
-    }
-
-    @Test
-    fun `update should remove participants and their schedules`() {
-
-    }
-
-    @Test
-    fun `update should modify time range for participants`() {
-
-    }
-
-    @Test
-    fun `update should handle no changes gracefully`() {
-
-    }
-
-    @Test
-    fun `update should bulk write changes to the database`() {
-
-    }
-
-
-    @Test
-    fun `delete should delete schedule successfully`() {
-
-    }
-
-    companion object {
-        @JvmStatic
-        fun provideSchedulesAndDateRanges(): Stream<Arguments> = Stream.of(
-            Arguments.of(
-                "Case 1: Same year",
-                LocalDateTime.of(2023, 2, 1, 0, 0),
-                LocalDateTime.of(2023, 2, 28, 23, 59),
-                LocalDateTime.of(2023, 1, 1, 0, 0),
-                LocalDateTime.of(2023, 3, 31, 23, 59),
-                true
-            ),
-            Arguments.of(
-                "Case 1: Same year - Excluded",
-                LocalDateTime.of(2023, 4, 1, 0, 0),
-                LocalDateTime.of(2023, 4, 30, 23, 59),
-                LocalDateTime.of(2023, 1, 1, 0, 0),
-                LocalDateTime.of(2023, 3, 31, 23, 59),
-                false
-            ),
-            Arguments.of(
-                "Case 2: Different years",
-                LocalDateTime.of(2022, 12, 1, 0, 0),
-                LocalDateTime.of(2022, 12, 31, 23, 59),
-                LocalDateTime.of(2022, 12, 1, 0, 0),
-                LocalDateTime.of(2023, 2, 28, 23, 59),
-                true
-            ),
-            Arguments.of(
-                "Case 2: Different years",
-                LocalDateTime.of(2023, 1, 1, 0, 0),
-                LocalDateTime.of(2023, 1, 31, 23, 59),
-                LocalDateTime.of(2022, 12, 1, 0, 0),
-                LocalDateTime.of(2023, 2, 28, 23, 59),
-                true
-            ),
-            Arguments.of(
-                "Case 2: Excluded",
-                LocalDateTime.of(2023, 3, 1, 0, 0),
-                LocalDateTime.of(2023, 3, 31, 23, 59),
-                LocalDateTime.of(2022, 12, 1, 0, 0),
-                LocalDateTime.of(2023, 2, 28, 23, 59),
-                false
-            ),
-            Arguments.of(
-                "Case 3: Extended range",
-                LocalDateTime.of(2023, 6, 1, 0, 0),
-                LocalDateTime.of(2023, 6, 30, 23, 59),
-                LocalDateTime.of(2022, 12, 1, 0, 0),
-                LocalDateTime.of(2024, 1, 31, 23, 59),
-                true
-            ),
-            Arguments.of(
-                "Case 4: Specific months",
-                LocalDateTime.of(2023, 2, 1, 0, 0),
-                LocalDateTime.of(2023, 2, 28, 23, 59),
-                LocalDateTime.of(2023, 2, 1, 0, 0),
-                LocalDateTime.of(2023, 3, 31, 23, 59),
-                true
-            ),
-            Arguments.of(
-                "Case 4: Specific months",
-                LocalDateTime.of(2023, 3, 1, 0, 0),
-                LocalDateTime.of(2023, 3, 31, 23, 59),
-                LocalDateTime.of(2023, 2, 1, 0, 0),
-                LocalDateTime.of(2023, 3, 31, 23, 59),
-                true
-            ),
-            Arguments.of(
-                "Case 4: Excluded",
-                LocalDateTime.of(2023, 4, 1, 0, 0),
-                LocalDateTime.of(2023, 4, 30, 23, 59),
-                LocalDateTime.of(2023, 2, 1, 0, 0),
-                LocalDateTime.of(2023, 3, 31, 23, 59),
-                false
-            ),
-            Arguments.of(
-                "Case 5: Full year range",
-                LocalDateTime.of(2023, 6, 1, 0, 0),
-                LocalDateTime.of(2023, 6, 30, 23, 59),
-                LocalDateTime.of(2023, 1, 1, 0, 0),
-                LocalDateTime.of(2023, 12, 31, 23, 59),
-                true
-            ),
-            Arguments.of(
-                "Case 6: Included",
-                LocalDateTime.of(2023, 12, 31, 23, 59),
-                LocalDateTime.of(2024, 1, 1, 0, 0),
-                LocalDateTime.of(2023, 1, 1, 0, 0),
-                LocalDateTime.of(2023, 12, 31, 23, 59),
-                true
-            ),
+    private fun createScheduleRequest(
+        userId: String,
+        startDate: String,
+        endDate: String? = startDate,
+        repeatType: RepeatType = NONE
+    ): CreateScheduleRequest {
+        return CreateScheduleRequest(
+            startDate = LocalDate.parse(startDate),
+            endDate = endDate?.let { LocalDate.parse(endDate) },
+            repeatType = repeatType,
+            participants = setOf(userId)
         )
     }
 }

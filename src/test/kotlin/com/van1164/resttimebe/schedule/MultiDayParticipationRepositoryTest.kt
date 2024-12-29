@@ -5,7 +5,7 @@ import com.van1164.resttimebe.schedule.repository.MultiDayRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest
 import java.time.LocalDate
 import java.time.Month
 import java.time.Month.JANUARY
@@ -13,7 +13,7 @@ import java.time.Month.MARCH
 import java.time.Year
 import kotlin.test.assertEquals
 
-@SpringBootTest
+@DataMongoTest
 class MultiDayRepositoryImplTest @Autowired constructor(
     private val multiDayRepository: MultiDayRepository
 ){
