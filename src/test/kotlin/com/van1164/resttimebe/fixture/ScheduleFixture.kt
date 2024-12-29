@@ -12,27 +12,12 @@ import java.time.LocalTime
 
 class ScheduleFixture {
     companion object {
-        fun createSchedule(user: User): Schedule {
-            val userId = user.userId
+        fun createSchedule(userId: String, startDate: String, endDate: String, repeatType: RepeatType): Schedule {
             return Schedule (
                 userId = userId,
-                startDate = LocalDate.now(),
-                startTime = LocalDate.now().atStartOfDay().toLocalTime(),
-                endTime = LocalDate.now().atStartOfDay().plusHours(1).toLocalTime(),
-                repeatType = RepeatType.NONE,
-                participants = setOf(userId),
-                status = ScheduleStatus.CONFIRMED,
-            )
-        }
-
-        fun createSchedule(user: User, startTime: LocalTime, endTime: LocalTime): Schedule {
-            val userId = user.userId
-            return Schedule (
-                userId = userId,
-                startDate = LocalDate.now(),
-                startTime = startTime,
-                endTime = endTime,
-                repeatType = RepeatType.NONE,
+                startDate = LocalDate.parse(startDate),
+                endDate = LocalDate.parse(endDate),
+                repeatType = repeatType,
                 participants = setOf(userId),
                 status = ScheduleStatus.CONFIRMED,
             )
