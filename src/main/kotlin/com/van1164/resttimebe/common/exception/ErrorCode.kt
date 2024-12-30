@@ -28,6 +28,7 @@ enum class ErrorCode (val status:Int, val code:String, val message:String) {
     // Schedule
     SCHEDULE_NOT_FOUND(404, "S001", "일정을 찾을 수 없습니다."),
     SCHEDULE_ID_NOT_INITIALIZED(400, "S002", "일정 ID가 초기화되지 않았습니다."),
+    INVALID_REPEAT_TYPE(400, "S003", "유효하지 않은 반복 타입입니다."),
 
     // Auth
     DUPLICATED_PHONE_NUMBER(409, "A001", "이미 등록된 전화번호입니다."),

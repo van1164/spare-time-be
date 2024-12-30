@@ -1,117 +1,191 @@
 package com.van1164.resttimebe.schedule
 
 import com.van1164.resttimebe.common.exception.ErrorCode.SCHEDULE_NOT_FOUND
-import com.van1164.resttimebe.common.exception.GlobalExceptions
+import com.van1164.resttimebe.common.exception.GlobalExceptions.NotFoundException
+import com.van1164.resttimebe.domain.RepeatType
+import com.van1164.resttimebe.domain.RepeatType.DAILY
+import com.van1164.resttimebe.domain.RepeatType.NONE
 import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
-import com.van1164.resttimebe.fixture.UserFixture.Companion.createUser
+import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
+import com.van1164.resttimebe.schedule.repository.MultiDayRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
-import com.van1164.resttimebe.user.repository.UserRepository
-import com.van1164.resttimebe.util.DatabaseIdHelper.Companion.validateAndGetId
-import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDate
-import java.time.temporal.ChronoUnit
+import java.time.Month
+import java.time.Month.JANUARY
+import java.time.Year
 
 @SpringBootTest
 class ScheduleServiceTest @Autowired constructor(
     private val scheduleService: ScheduleService,
     private val scheduleRepository: ScheduleRepository,
-    private val userRepository: UserRepository
+    private val dailySchedulesRepository: DailySchedulesRepository,
+    private val multiDayRepository: MultiDayRepository
 ) {
+
     @BeforeEach
     fun setUp() {
+        dailySchedulesRepository.deleteAll()
+        multiDayRepository.deleteAll()
         scheduleRepository.deleteAll()
-        userRepository.deleteAll()
     }
 
     @Test
-    fun `getSchedules should return schedules within date ranges`() {
-        val user = userRepository.save(createUser())
-        val schedule1 = createSchedule(
-            user,
-            LocalDate.now().minusDays(5).atStartOfDay(),
-            LocalDate.now().minusDays(4).atStartOfDay()
+    fun `getSchedules retrieves daily, multi-day, and recurring schedules for the user`() {
+        val dbUserId = "testUser"
+        val (userId, year, month) = SearchCondition(dbUserId, 2024, JANUARY)
+        val requests = listOf(
+            createScheduleRequest(dbUserId, "2024-01-20", "2024-01-20", NONE),
+            createScheduleRequest(dbUserId, "2024-01-10", "2024-01-13", NONE),
+            createScheduleRequest(dbUserId, "2024-01-05", "2024-01-05", DAILY),
         )
-        val schedule2 = createSchedule(
-            user,
-            LocalDate.now().minusDays(1).atStartOfDay(),
-            LocalDate.now().atStartOfDay()
+        val (dailySchedule, multiDaySchedule, recurringSchedule) = requests.map {
+            scheduleService.create(dbUserId, it).schedule
+        }
+
+        val response = scheduleService.getSchedules(userId, year, month)
+
+        assertEquals(setOf(dailySchedule), response.dailySchedules)
+        assertEquals(setOf(multiDaySchedule), response.multiDaySchedules)
+        assertEquals(setOf(recurringSchedule), response.recurringSchedules)
+    }
+
+    @Test
+    fun `getById retrieves the correct schedule`() {
+        val saved = scheduleRepository.save(createSchedule("testUser", "2024-01-15"))
+
+        val result = scheduleService.getById(saved.id!!)
+
+        assertEquals(saved, result)
+    }
+
+    @Test
+    fun `create adds a daily schedule and updates dailySchedulesRepository`() {
+        val userId = "testUser"
+        val request = createScheduleRequest(userId, "2024-01-15")
+
+        val response = scheduleService.create(userId, request)
+
+        val savedSchedule = scheduleService.getById(response.schedule.id!!)
+        assertNotNull(savedSchedule)
+        assertTrue(
+            dailySchedulesRepository.getDailyScheduleIds(userId, Year.of(2024), JANUARY)
+                .contains(savedSchedule.id)
         )
-        scheduleRepository.saveAll(listOf(schedule1, schedule2))
+    }
 
-        val schedules = scheduleService.getSchedules(
-            user.userId,
-            LocalDate.now().minusDays(2).atStartOfDay(),
-            LocalDate.now().plusDays(1).atStartOfDay()
+    @Test
+    fun `getSchedules returns empty response when no schedules exist`() {
+        val dbUserId = "testUser"
+        val (userId, year, month) = SearchCondition(dbUserId, 2024, JANUARY)
+
+        val response = scheduleService.getSchedules(userId, year, month)
+
+        assertTrue(response.dailySchedules.isEmpty())
+        assertTrue(response.multiDaySchedules.isEmpty())
+        assertTrue(response.recurringSchedules.isEmpty())
+    }
+
+    @Test
+    fun `getSchedules includes multi-day schedules that start in the given month`() {
+        val dbUserId = "testUser"
+        val (userId, year, month) = SearchCondition(dbUserId, 2024, JANUARY)
+        scheduleService.create(userId, createScheduleRequest(userId, "2024-01-31", "2024-02-01"))
+
+        val response = scheduleService.getSchedules(userId, year, month)
+
+        assertEquals(1, response.multiDaySchedules.size) // multi-day 일정 포함 여부 확인
+    }
+
+    @Test
+    fun `getById throws NotFoundException for non-existent schedule`() {
+        val nonExistentId = "nonExistentId"
+
+        val exception = assertThrows<NotFoundException> {
+            scheduleService.getById(nonExistentId)
+        }
+
+        assertEquals(SCHEDULE_NOT_FOUND, exception.errorCode)
+    }
+
+    @Test
+    fun `create adds a multi-day schedule and updates multiDayRepository`() {
+        val userId = "testUser"
+        val request = createScheduleRequest(userId, "2024-01-10", "2024-01-13")
+
+        val response = scheduleService.create(userId, request)
+
+        val savedSchedule = scheduleService.getById(response.schedule.id!!)
+        assertNotNull(savedSchedule)
+        assertTrue(
+            multiDayRepository.getMultiDayScheduleIds(userId, Year.of(2024), JANUARY)
+                .contains(savedSchedule.id)
         )
-
-        assertThat(schedules).hasSize(1)
-        assertThat(schedules[0].userId).isEqualTo(schedule2.userId)
-        assertThat(schedules[0].startTime).isEqualTo(schedule2.startTime)
-        assertThat(schedules[0].endTime).isEqualTo(schedule2.endTime)
     }
 
     @Test
-    fun `getById should return schedule successfully`() {
-        val user = userRepository.save(createUser())
-        val schedule = scheduleRepository.save(createSchedule(user))
-        val scheduleId = schedule.validateAndGetId()
+    fun `delete removes the schedule and associated participants`() {
+        val userId = "testUser"
+        val schedule =
+            scheduleService.create(userId, createScheduleRequest(userId, "2024-01-15")).schedule
 
-        val foundSchedule = scheduleService.getById(scheduleId)
+        scheduleService.delete(schedule.id!!)
 
-        assertThat(foundSchedule.id).isEqualTo(schedule.id)
-        assertThat(foundSchedule.userId).isEqualTo(schedule.userId)
-        assertThat(foundSchedule.startTime.truncatedTo(ChronoUnit.SECONDS)).isEqualTo(schedule.startTime.truncatedTo(ChronoUnit.SECONDS))
-        assertThat(foundSchedule.endTime.truncatedTo(ChronoUnit.SECONDS)).isEqualTo(schedule.endTime.truncatedTo(ChronoUnit.SECONDS))
-        assertThat(foundSchedule.repeatType).isEqualTo(schedule.repeatType)
-        assertThat(foundSchedule.participants).isEqualTo(schedule.participants)
-        assertThat(foundSchedule.status).isEqualTo(schedule.status)
-    }
-
-    @Test
-    fun `getById should throw exception when schedule not found`() {
-        assertThatThrownBy { scheduleService.getById("not-found") }
-            .isInstanceOf(GlobalExceptions.NotFoundException::class.java)
-            .hasMessage(SCHEDULE_NOT_FOUND.message)
-    }
-
-    @Test
-    fun `update should update schedule successfully`() {
-        val user = userRepository.save(createUser())
-        val schedule = scheduleRepository.save(createSchedule(user))
-        val scheduleId = schedule.validateAndGetId()
-
-        val updatedSchedule = scheduleService.update(
-            scheduleId, CreateScheduleRequest(
-                startTime = schedule.startTime.plusDays(1),
-                endTime = schedule.endTime.plusDays(1),
-                repeatType = schedule.repeatType,
-                participants = schedule.participants,
-                status = schedule.status
-            )
+        assertFalse(scheduleRepository.existsById(schedule.id!!))
+        assertTrue(
+            dailySchedulesRepository.getDailyScheduleIds(userId, Year.of(2024), JANUARY).isEmpty()
         )
-
-        assertThat(updatedSchedule.id).isEqualTo(schedule.id)
-        assertThat(updatedSchedule.userId).isEqualTo(schedule.userId)
-        assertThat(updatedSchedule.startTime).isEqualTo(schedule.startTime.plusDays(1))
-        assertThat(updatedSchedule.endTime).isEqualTo(schedule.endTime.plusDays(1))
-        assertThat(updatedSchedule.repeatType).isEqualTo(schedule.repeatType)
-        assertThat(updatedSchedule.participants).isEqualTo(schedule.participants)
-        assertThat(updatedSchedule.status).isEqualTo(schedule.status)
     }
 
     @Test
-    fun `delete should delete schedule successfully`() {
-        val user = userRepository.save(createUser())
-        val scheduleId = scheduleRepository.save(createSchedule(user)).validateAndGetId()
+    fun `removeParticipantsFromSchedule correctly removes participants from daily schedule`() {
+        val userId = "testUser"
+        val schedule = scheduleService.create(userId, createScheduleRequest(userId, "2024-01-15")).schedule
 
-        scheduleService.delete(scheduleId)
+        scheduleService.delete(schedule.id!!)
 
-        assertThat(scheduleRepository.findById(scheduleId)).isEmpty
+        assertTrue(
+            dailySchedulesRepository.getDailyScheduleIds(userId, Year.of(2024), JANUARY).isEmpty()
+        )
+    }
+
+    @Test
+    fun `removeParticipantsFromSchedule correctly removes participants from multi-day schedule`() {
+        val userId = "testUser"
+        val schedule = scheduleService.create(userId, createScheduleRequest(userId, "2024-01-10", "2024-01-13")).schedule
+
+        scheduleService.delete(schedule.id!!)
+
+        assertTrue(
+            multiDayRepository.getMultiDayScheduleIds(userId, Year.of(2024), JANUARY).isEmpty()
+        )
+    }
+
+    private data class SearchCondition(
+        val userId: String,
+        val year: Year,
+        val month: Month
+    ) {
+        constructor(userId: String, year: Int, month: Month) : this(userId, Year.of(year), month)
+    }
+
+    private fun createScheduleRequest(
+        userId: String,
+        startDate: String,
+        endDate: String? = startDate,
+        repeatType: RepeatType = NONE
+    ): CreateScheduleRequest {
+        return CreateScheduleRequest(
+            startDate = LocalDate.parse(startDate),
+            endDate = endDate?.let { LocalDate.parse(endDate) },
+            repeatType = repeatType,
+            participants = setOf(userId)
+        )
     }
 }

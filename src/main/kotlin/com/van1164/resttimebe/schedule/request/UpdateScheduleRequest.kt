@@ -1,24 +1,20 @@
 package com.van1164.resttimebe.schedule.request
 
-import com.van1164.resttimebe.domain.Category
 import com.van1164.resttimebe.domain.RepeatType
-import com.van1164.resttimebe.domain.RepeatType.*
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.domain.ScheduleStatus
-import com.van1164.resttimebe.domain.ScheduleStatus.*
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
-data class CreateScheduleRequest(
-    val categoryId: String? = null,
+data class UpdateScheduleRequest(
+    val categoryId: String?,
     val startDate: LocalDate,
-    val endDate: LocalDate? = startDate,
-    val startTime: LocalTime? = null,
-    val endTime: LocalTime? = null,
-    val repeatType: RepeatType = NONE,
+    val endDate: LocalDate,
+    val startTime: LocalTime?,
+    val endTime: LocalTime?,
+    val repeatType: RepeatType,
     val participants: Set<String>,
-    val status: ScheduleStatus = PENDING
+    val status: ScheduleStatus
 ) {
     fun toDomain(userId: String): Schedule {
         return Schedule(

@@ -2,20 +2,26 @@ package com.van1164.resttimebe.domain
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
-import java.time.LocalDateTime
+import java.time.LocalDate
+import java.time.LocalTime
 
 @Document(collection = "schedules")
 data class Schedule(
     @Id
     val id: String? = null,
     val userId: String,
-    val category: Category? = null,
-    val startTime: LocalDateTime,
-    val endTime: LocalDateTime,
+    val categoryId: String? = null,
+    val startDate: LocalDate,
+    val endDate: LocalDate? = startDate,
+    val startTime: LocalTime? = null,
+    val endTime: LocalTime? = null,
     val repeatType: RepeatType,
-    val participants: List<String>,
+    val participants: Set<String>,
     val status: ScheduleStatus
-)
+) {
+    val isDaily: Boolean
+        get() = startDate == endDate
+}
 
 enum class RepeatType {
     DAILY,    // 매일

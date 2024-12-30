@@ -36,4 +36,13 @@ class GlobalExceptionHandler {
             ErrorResponse.of(e.errorCode)
         )
     }
+
+    @ExceptionHandler(GlobalExceptions.BadRequestException::class)
+    fun handleBadRequestException(
+        e: GlobalExceptions.BadRequestException
+    ): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.valueOf(e.errorCode.status)).body(
+            ErrorResponse.of(e.errorCode)
+        )
+    }
 }
