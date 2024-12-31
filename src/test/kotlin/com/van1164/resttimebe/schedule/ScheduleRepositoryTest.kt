@@ -2,7 +2,7 @@ package com.van1164.resttimebe.schedule
 
 import com.van1164.resttimebe.domain.RepeatInterval.DAILY
 import com.van1164.resttimebe.domain.RepeatInterval.WEEKLY
-import com.van1164.resttimebe.fixture.ScheduleFixture
+import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -27,9 +27,9 @@ class ScheduleRepositoryTest @Autowired constructor (
         val dbUserId = "testUser"
         val (userId, year, month) = SearchCondition(dbUserId, 2024, DECEMBER)
         val schedules = listOf(
-            ScheduleFixture.createSchedule(dbUserId, "2024-12-01", "2024-12-31", DAILY),
-            ScheduleFixture.createSchedule(dbUserId, "2024-11-15", "2024-12-05", WEEKLY),
-            ScheduleFixture.createSchedule(dbUserId, "2024-12-10", "2024-12-15")
+            createSchedule(dbUserId, "2024-12-01", "2024-12-31", DAILY),
+            createSchedule(dbUserId, "2024-11-15", "2024-12-05", WEEKLY),
+            createSchedule(dbUserId, "2024-12-10", "2024-12-15")
         )
         scheduleRepository.saveAll(schedules)
 

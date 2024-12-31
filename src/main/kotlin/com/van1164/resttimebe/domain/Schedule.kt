@@ -33,18 +33,15 @@ data class RepeatOptions(
     val endCondition: RepeatEndCondition
 )
 
-
 enum class RepeatInterval {
     DAILY, WEEKLY, MONTHLY, YEARLY
 }
-
 
 data class RepeatEndCondition(
     val type: EndConditionType,
     val repeatCount: Int? = null,
     val endDate: LocalDate? = null
 )
-
 
 enum class EndConditionType {
     UNTIL_DATE,
