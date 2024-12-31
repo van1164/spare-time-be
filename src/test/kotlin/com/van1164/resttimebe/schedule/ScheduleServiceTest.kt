@@ -2,21 +2,18 @@ package com.van1164.resttimebe.schedule
 
 import com.van1164.resttimebe.common.exception.ErrorCode.SCHEDULE_NOT_FOUND
 import com.van1164.resttimebe.common.exception.GlobalExceptions.NotFoundException
-import com.van1164.resttimebe.domain.RepeatType
-import com.van1164.resttimebe.domain.RepeatType.DAILY
-import com.van1164.resttimebe.domain.RepeatType.NONE
+import com.van1164.resttimebe.domain.RepeatInterval.DAILY
 import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createSchedule
+import com.van1164.resttimebe.fixture.ScheduleFixture.Companion.createScheduleRequest
 import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
 import com.van1164.resttimebe.schedule.repository.MultiDayRepository
 import com.van1164.resttimebe.schedule.repository.ScheduleRepository
-import com.van1164.resttimebe.schedule.request.CreateScheduleRequest
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import java.time.LocalDate
 import java.time.Month
 import java.time.Month.JANUARY
 import java.time.Year
@@ -41,8 +38,8 @@ class ScheduleServiceTest @Autowired constructor(
         val dbUserId = "testUser"
         val (userId, year, month) = SearchCondition(dbUserId, 2024, JANUARY)
         val requests = listOf(
-            createScheduleRequest(dbUserId, "2024-01-20", "2024-01-20", NONE),
-            createScheduleRequest(dbUserId, "2024-01-10", "2024-01-13", NONE),
+            createScheduleRequest(dbUserId, "2024-01-20", "2024-01-20"),
+            createScheduleRequest(dbUserId, "2024-01-10", "2024-01-13"),
             createScheduleRequest(dbUserId, "2024-01-05", "2024-01-05", DAILY),
         )
         val (dailySchedule, multiDaySchedule, recurringSchedule) = requests.map {
@@ -175,17 +172,4 @@ class ScheduleServiceTest @Autowired constructor(
         constructor(userId: String, year: Int, month: Month) : this(userId, Year.of(year), month)
     }
 
-    private fun createScheduleRequest(
-        userId: String,
-        startDate: String,
-        endDate: String? = startDate,
-        repeatType: RepeatType = NONE
-    ): CreateScheduleRequest {
-        return CreateScheduleRequest(
-            startDate = LocalDate.parse(startDate),
-            endDate = endDate?.let { LocalDate.parse(endDate) },
-            repeatType = repeatType,
-            participants = setOf(userId)
-        )
-    }
 }

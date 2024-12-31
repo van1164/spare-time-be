@@ -2,9 +2,8 @@ package com.van1164.resttimebe.schedule
 
 import com.mongodb.client.model.*
 import com.van1164.resttimebe.common.exception.ErrorCode
-import com.van1164.resttimebe.common.exception.GlobalExceptions.*
+import com.van1164.resttimebe.common.exception.GlobalExceptions.NotFoundException
 import com.van1164.resttimebe.domain.MultiDayParticipation
-import com.van1164.resttimebe.domain.RepeatType.*
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.schedule.repository.DailySchedulesRepository
 import com.van1164.resttimebe.schedule.repository.MultiDayRepository
@@ -90,7 +89,7 @@ class ScheduleService(
     fun update(scheduleId: String, request: UpdateScheduleRequest): ScheduleUpdateResponse {
         val found = getById(scheduleId)
 
-        if (found.repeatType == NONE && request.repeatType != NONE) {
+        if (found.repeatOptions == null && request.repeatOptions != null) {
             removeParticipantsFromSchedule(found)
             return ScheduleUpdateResponse(
                 scheduleRepository.save(request.toDomain(scheduleId))
@@ -233,8 +232,8 @@ class ScheduleService(
         return DeleteOneModel(filter)
     }
 
-    private fun Schedule.isDailySchedule(): Boolean = this.repeatType == NONE && this.isDaily
-    private fun Schedule.isMultiDaySchedule(): Boolean = this.repeatType == NONE && !this.isDaily
+    private fun Schedule.isDailySchedule(): Boolean = this.repeatOptions == null && this.isDaily
+    private fun Schedule.isMultiDaySchedule(): Boolean = this.repeatOptions == null && !this.isDaily
     private fun isYearMonthUpdated(old: Schedule, new: UpdateScheduleRequest): Boolean {
         val oldYearMonth = YearMonth.of(old.startDate.year, old.startDate.month)
         val newYearMonth = YearMonth.of(new.startDate.year, new.startDate.month)
