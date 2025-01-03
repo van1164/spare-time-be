@@ -31,7 +31,7 @@
         </pattern>
         <timestamp>
           <fieldName>timestamp</fieldName>
-          <timeZone>KST</timeZone>
+          <timeZone>Asia/Seoul</timeZone>
         </timestamp>
         <mdc>
           <includeMdcKeyName>requestId</includeMdcKeyName>
@@ -76,7 +76,7 @@
         </pattern>
         <timestamp>
           <fieldName>timestamp</fieldName>
-          <timeZone>KST</timeZone>
+          <timeZone>Asia/Seoul</timeZone>
         </timestamp>
         <mdc>
           <includeMdcKeyName>requestId</includeMdcKeyName>
@@ -121,7 +121,7 @@
         </pattern>
         <timestamp>
           <fieldName>timestamp</fieldName>
-          <timeZone>KST</timeZone>
+          <timeZone>Asia/Seoul</timeZone>
         </timestamp>
         <mdc>
           <includeMdcKeyName>requestId</includeMdcKeyName>
