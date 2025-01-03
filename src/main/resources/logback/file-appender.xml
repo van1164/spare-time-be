@@ -20,6 +20,14 @@
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
     <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <includeCallerData>true</includeCallerData>
+      <jsonGeneratorDecorator class="net.logstash.logback.decorate.CompositeJsonGeneratorDecorator">
+        <decorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
+        <decorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+          <defaultMask>XXXX</defaultMask>
+          <path>password</path>
+        </decorator>
+      </jsonGeneratorDecorator>
       <providers>
         <logLevel>
           <fieldName>level</fieldName>
@@ -65,6 +73,14 @@
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
     <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <includeCallerData>true</includeCallerData>
+      <jsonGeneratorDecorator class="net.logstash.logback.decorate.CompositeJsonGeneratorDecorator">
+        <decorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
+        <decorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+          <defaultMask>XXXX</defaultMask>
+          <path>password</path>
+        </decorator>
+      </jsonGeneratorDecorator>
       <providers>
         <logLevel>
           <fieldName>level</fieldName>
@@ -110,6 +126,14 @@
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
     <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <includeCallerData>true</includeCallerData>
+      <jsonGeneratorDecorator class="net.logstash.logback.decorate.CompositeJsonGeneratorDecorator">
+        <decorator class="net.logstash.logback.decorate.PrettyPrintingJsonGeneratorDecorator"/>
+        <decorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+          <defaultMask>XXXX</defaultMask>
+          <path>password</path>
+        </decorator>
+      </jsonGeneratorDecorator>
       <providers>
         <logLevel>
           <fieldName>level</fieldName>
