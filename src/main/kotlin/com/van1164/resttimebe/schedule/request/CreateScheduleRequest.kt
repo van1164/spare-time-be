@@ -1,13 +1,10 @@
 package com.van1164.resttimebe.schedule.request
 
-import com.van1164.resttimebe.domain.Category
-import com.van1164.resttimebe.domain.RepeatType
-import com.van1164.resttimebe.domain.RepeatType.*
+import com.van1164.resttimebe.domain.RepeatOptions
 import com.van1164.resttimebe.domain.Schedule
 import com.van1164.resttimebe.domain.ScheduleStatus
-import com.van1164.resttimebe.domain.ScheduleStatus.*
+import com.van1164.resttimebe.domain.ScheduleStatus.PENDING
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 data class CreateScheduleRequest(
@@ -16,7 +13,7 @@ data class CreateScheduleRequest(
     val endDate: LocalDate? = startDate,
     val startTime: LocalTime? = null,
     val endTime: LocalTime? = null,
-    val repeatType: RepeatType = NONE,
+    val repeatOptions: RepeatOptions? = null,
     val participants: Set<String>,
     val status: ScheduleStatus = PENDING
 ) {
@@ -28,7 +25,7 @@ data class CreateScheduleRequest(
             endDate = endDate,
             startTime = startTime,
             endTime = endTime,
-            repeatType = repeatType,
+            repeatOptions = repeatOptions,
             participants = participants,
             status = status
         )

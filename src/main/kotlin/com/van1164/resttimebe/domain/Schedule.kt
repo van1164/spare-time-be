@@ -2,6 +2,7 @@ package com.van1164.resttimebe.domain
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -15,7 +16,7 @@ data class Schedule(
     val endDate: LocalDate? = startDate,
     val startTime: LocalTime? = null,
     val endTime: LocalTime? = null,
-    val repeatType: RepeatType,
+    val repeatOptions: RepeatOptions? = null,
     val participants: Set<String>,
     val status: ScheduleStatus
 ) {
@@ -23,15 +24,33 @@ data class Schedule(
         get() = startDate == endDate
 }
 
-enum class RepeatType {
-    DAILY,    // 매일
-    WEEKLY,   // 매주
-    MONTHLY,  // 매월
-    NONE      // 반복 없음
+data class RepeatOptions(
+    val interval: RepeatInterval,
+    val frequency: Int = 1,
+    val daysOfWeek: Set<DayOfWeek>? = null,
+    val daysOfMonth: Set<Int>? = null,
+    val daysOfYear: Set<Int>? = null,
+    val endCondition: RepeatEndCondition
+)
+
+enum class RepeatInterval {
+    DAILY, WEEKLY, MONTHLY, YEARLY
+}
+
+data class RepeatEndCondition(
+    val type: EndConditionType,
+    val repeatCount: Int? = null,
+    val endDate: LocalDate? = null
+)
+
+enum class EndConditionType {
+    UNTIL_DATE,
+    AFTER_COUNT,
+    INDEFINITE
 }
 
 enum class ScheduleStatus {
-    CONFIRMED,  // 약속 확정
-    CANCELLED,  // 취소
-    PENDING     // 요청중
+    CONFIRMED,
+    CANCELLED,
+    PENDING
 }
