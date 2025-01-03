@@ -43,6 +43,10 @@ dependencies {
     // ## OpenAPI 지원
     // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0") // OpenAPI UI 지원
+
+    // ## Logging
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+    implementation("org.springframework.boot:spring-boot-starter-logging:3.1.0")
 }
 
 kotlin {
