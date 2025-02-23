@@ -16,6 +16,7 @@
 | <img src="http://avatars.githubusercontent.com/u/52437971?v=4" height=200 width=200> | <img src="https://avatars.githubusercontent.com/u/130643312?v=4" height=200 width=200> |
 
 ## 다이어그램 
+![diagram.png](docs/diagram.png)
 
 ## 기술 스택 및 도구
 
